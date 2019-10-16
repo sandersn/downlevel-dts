@@ -1,0 +1,14 @@
+{
+  "name": "demake-dts",
+  "version": "1.0.0",
+  "description": "Convert d.ts to be compatible with older typescript compilers",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Nathan Shively-Sanders",
+  "license": "MIT",
+  "dependencies": {
+    "ts-morph": "^4.2.0"
+  }
+}
