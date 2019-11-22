@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Convert d.ts to be compatible with older typescript compilers",
   "main": "index.js",
+  "bin": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
