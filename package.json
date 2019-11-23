@@ -9,6 +9,6 @@
   "author": "Nathan Shively-Sanders",
   "license": "MIT",
   "dependencies": {
-    "ts-morph": "^4.2.0"
+    "ts-morph": "^5.0.0"
   }
 }
