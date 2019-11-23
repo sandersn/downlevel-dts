@@ -1,5 +1,4 @@
 const { Project, TypeGuards, ts } = require("ts-morph");
-const { cwd } = require('process')
 const path = require('path')
 const src = process.argv[2]
 const target = process.argv[3]
@@ -10,8 +9,12 @@ if (!src || !target) {
 const project = new Project({
     tsConfigFilePath: path.join(src, "tsconfig.json")
 })
+const cwd = project.addDirectoryAtPath(".")
+const targetDir = project.createDirectory(target)
+
 for (const f of project.getSourceFiles("**/*.d.ts")) {
-    f.forEachDescendant(n => {
+    const newFile = targetDir.createSourceFile(cwd.getRelativePathTo(f), f.getFullText(), { overwrite: true })
+    newFile.forEachDescendant(n => {
         if (TypeGuards.isGetAccessorDeclaration(n)) {
             const s = n.getSetAccessor()
             n.replaceWithText(`${getModifiersText(n)}${s ? "" : "readonly "}${n.getName()}: ${n.getReturnTypeNodeOrThrow().getText()}`)
@@ -26,11 +29,8 @@ for (const f of project.getSourceFiles("**/*.d.ts")) {
             }
         }
     })
-
-    f.copy(path.join(cwd(), target, path.relative(cwd(), f.getFilePath())), { overwrite: true })
-    f.refreshFromFileSystemSync()
 }
-project.save()
+targetDir.save()
 
 /**
  * @param {import("ts-morph").ModifierableNode} node
