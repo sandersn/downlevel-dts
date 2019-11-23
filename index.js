@@ -13,7 +13,7 @@ const project = new Project({
 for (const f of project.getSourceFiles("**/*.d.ts")) {
     const gs = f.getDescendantsOfKind(ts.SyntaxKind.GetAccessor)
     for (const g of gs) {
-        const s = g.getParent().getChildrenOfKind(ts.SyntaxKind.SetAccessor).find(s => s.getName() === g.getName())
+        const s = g.getSetAccessor();
         g.replaceWithText(`${s ? "" : "readonly "}${g.getName()}: ${g.getType().getText()}`)
         if (s) {
             s.remove()
@@ -21,7 +21,7 @@ for (const f of project.getSourceFiles("**/*.d.ts")) {
     }
     const ss = f.getDescendantsOfKind(ts.SyntaxKind.SetAccessor)
     for (const s of ss) {
-        const g = s.getParent().getChildrenOfKind(ts.SyntaxKind.GetAccessor).find(g => s.getName() === g.getName())
+        const g = s.getGetAccessor();
         if (!g) {
             s.replaceWithText(`${s.getName()}: ${s.getType().getText()}`)
         }
