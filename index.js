@@ -14,7 +14,7 @@ for (const f of project.getSourceFiles("**/*.d.ts")) {
     const gs = f.getDescendantsOfKind(ts.SyntaxKind.GetAccessor)
     for (const g of gs) {
         const s = g.getSetAccessor();
-        g.replaceWithText(`${s ? "" : "readonly "}${g.getName()}: ${g.getType().getText()}`)
+        g.replaceWithText(`${s ? "" : "readonly "}${g.getName()}: ${g.getReturnTypeNodeOrThrow().getText()}`)
         if (s) {
             s.remove()
         }
@@ -23,7 +23,7 @@ for (const f of project.getSourceFiles("**/*.d.ts")) {
     for (const s of ss) {
         const g = s.getGetAccessor();
         if (!g) {
-            s.replaceWithText(`${s.getName()}: ${s.getType().getText()}`)
+            s.replaceWithText(`${s.getName()}: ${s.getReturnTypeNodeOrThrow().getText()}`)
         }
     }
     f.copy(path.join(cwd(), target, path.relative(cwd(), f.getFilePath())), { overwrite: true })
