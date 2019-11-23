@@ -1,4 +1,4 @@
-const { Project, ts } = require("ts-morph");
+const { Project, TypeGuards, ts } = require("ts-morph");
 const { cwd } = require('process')
 const path = require('path')
 const src = process.argv[2]
@@ -11,23 +11,31 @@ const project = new Project({
     tsConfigFilePath: path.join(src, "tsconfig.json")
 })
 for (const f of project.getSourceFiles("**/*.d.ts")) {
-    const gs = f.getDescendantsOfKind(ts.SyntaxKind.GetAccessor)
-    for (const g of gs) {
-        const s = g.getSetAccessor();
-        g.replaceWithText(`${s ? "" : "readonly "}${g.getName()}: ${g.getReturnTypeNodeOrThrow().getText()}`)
-        if (s) {
-            s.remove()
+    f.forEachDescendant(n => {
+        if (TypeGuards.isGetAccessorDeclaration(n)) {
+            const s = n.getSetAccessor()
+            n.replaceWithText(`${getModifiersText(n)}${s ? "" : "readonly "}${n.getName()}: ${n.getReturnTypeNodeOrThrow().getText()}`)
+            if (s) {
+                s.remove()
+            }
         }
-    }
-    const ss = f.getDescendantsOfKind(ts.SyntaxKind.SetAccessor)
-    for (const s of ss) {
-        const g = s.getGetAccessor();
-        if (!g) {
-            s.replaceWithText(`${s.getName()}: ${s.getReturnTypeNodeOrThrow().getText()}`)
+        else if (TypeGuards.isSetAccessorDeclaration(n)) {
+            const g = n.getGetAccessor()
+            if (!g) {
+                n.replaceWithText(`${getModifiersText(n)}${n.getName()}: ${n.getReturnTypeNodeOrThrow().getText()}`)
+            }
         }
-    }
+    })
+
     f.copy(path.join(cwd(), target, path.relative(cwd(), f.getFilePath())), { overwrite: true })
     f.refreshFromFileSystemSync()
 }
 project.save()
 
+/**
+ * @param {import("ts-morph").ModifierableNode} node
+ */
+function getModifiersText(node) {
+    const modifiersText = node.getModifiers().map(m => m.getText()).join(" ")
+    return modifiersText.length > 0 ? modifiersText + " " : ""
+}
