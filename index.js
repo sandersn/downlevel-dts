@@ -1,4 +1,4 @@
-const { Project, TypeGuards, ts } = require("ts-morph");
+const { Project, ts } = require("ts-morph");
 const path = require('path')
 const src = process.argv[2]
 const target = process.argv[3]
@@ -14,24 +14,24 @@ const targetDir = project.createDirectory(target)
 
 for (const f of project.getSourceFiles("**/*.d.ts")) {
     const newFile = targetDir.createSourceFile(cwd.getRelativePathTo(f), f.getFullText(), { overwrite: true })
-    newFile.forEachDescendant(n => {
-        if (TypeGuards.isGetAccessorDeclaration(n)) {
-            const s = n.getSetAccessor()
-            const returnTypeNode = n.getReturnTypeNode()
-            n.replaceWithText(`${getModifiersText(n)}${s ? "" : "readonly "}${n.getName()}: ${returnTypeNode && returnTypeNode.getText() || "any"}`)
-            if (s) {
-                s.remove()
-            }
+    const gs = newFile.getDescendantsOfKind(ts.SyntaxKind.GetAccessor)
+    for (const g of gs) {
+        const s = g.getSetAccessor()
+        const returnTypeNode = g.getReturnTypeNode()
+        g.replaceWithText(`${getModifiersText(g)}${s ? "" : "readonly "}${g.getName()}: ${returnTypeNode && returnTypeNode.getText() || "any"}`)
+        if (s) {
+            s.remove()
         }
-        else if (TypeGuards.isSetAccessorDeclaration(n)) {
-            const g = n.getGetAccessor()
-            if (!g) {
-                const firstParam = n.getParameters()[0]
-                const paramTypeNode = firstParam && firstParam.getTypeNode()
-                n.replaceWithText(`${getModifiersText(n)}${n.getName()}: ${paramTypeNode && paramTypeNode.getText() || "any"}`)
-            }
+    }
+    const ss = newFile.getDescendantsOfKind(ts.SyntaxKind.SetAccessor)
+    for (const s of ss) {
+        const g = s.getGetAccessor()
+        if (!g) {
+            const firstParam = s.getParameters()[0]
+            const paramTypeNode = firstParam && firstParam.getTypeNode()
+            s.replaceWithText(`${getModifiersText(s)}${s.getName()}: ${paramTypeNode && paramTypeNode.getText() || "any"}`)
         }
-    })
+    }
 }
 targetDir.save()
 
