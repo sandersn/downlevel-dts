@@ -17,7 +17,8 @@ for (const f of project.getSourceFiles("**/*.d.ts")) {
     newFile.forEachDescendant(n => {
         if (TypeGuards.isGetAccessorDeclaration(n)) {
             const s = n.getSetAccessor()
-            n.replaceWithText(`${getModifiersText(n)}${s ? "" : "readonly "}${n.getName()}: ${n.getReturnTypeNodeOrThrow().getText()}`)
+            const returnTypeNode = n.getReturnTypeNode()
+            n.replaceWithText(`${getModifiersText(n)}${s ? "" : "readonly "}${n.getName()}: ${returnTypeNode && returnTypeNode.getText() || "any"}`)
             if (s) {
                 s.remove()
             }
@@ -25,7 +26,9 @@ for (const f of project.getSourceFiles("**/*.d.ts")) {
         else if (TypeGuards.isSetAccessorDeclaration(n)) {
             const g = n.getGetAccessor()
             if (!g) {
-                n.replaceWithText(`${getModifiersText(n)}${n.getName()}: ${n.getReturnTypeNodeOrThrow().getText()}`)
+                const firstParam = n.getParameters()[0]
+                const paramTypeNode = firstParam && firstParam.getTypeNode()
+                n.replaceWithText(`${getModifiersText(n)}${n.getName()}: ${paramTypeNode && paramTypeNode.getText() || "any"}`)
             }
         }
     })
