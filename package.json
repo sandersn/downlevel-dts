@@ -1,6 +1,6 @@
 {
-  "name": "demake-dts",
-  "version": "1.0.0",
+  "name": "downlevel-dts",
+  "version": "0.1.0",
   "description": "Convert d.ts to be compatible with older typescript compilers",
   "main": "index.js",
   "scripts": {
