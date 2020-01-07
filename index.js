@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const { Project, ts } = require("ts-morph");
-const { cwd } = require('process')
 const path = require('path')
 
 /**
@@ -17,29 +16,41 @@ async function main(src, target) {
     const project = new Project({
         tsConfigFilePath: path.join(src, "tsconfig.json")
     })
+    const targetDir = project.createDirectory(target)
+
     for (const f of project.getSourceFiles("**/*.d.ts")) {
         if (f.isInNodeModules()) {
             continue
         }
-        const gs = f.getDescendantsOfKind(ts.SyntaxKind.GetAccessor)
+        const newFile = targetDir.createSourceFile(project.getDirectoryOrThrow(src).getRelativePathTo(f), f.getFullText(), { overwrite: true })
+        const gs = newFile.getDescendantsOfKind(ts.SyntaxKind.GetAccessor)
         for (const g of gs) {
-            const s = g.getParent().getChildrenOfKind(ts.SyntaxKind.SetAccessor).find(s => s.getName() === g.getName())
-            g.replaceWithText(`${s ? "" : "readonly "}${g.getName()}: ${g.getType().getText()}`)
+            const s = g.getSetAccessor()
+            const returnTypeNode = g.getReturnTypeNode()
+            g.replaceWithText(`${getModifiersText(g)}${s ? "" : "readonly "}${g.getName()}: ${returnTypeNode && returnTypeNode.getText() || "any"}`)
             if (s) {
                 s.remove()
             }
         }
-        const ss = f.getDescendantsOfKind(ts.SyntaxKind.SetAccessor)
+        const ss = newFile.getDescendantsOfKind(ts.SyntaxKind.SetAccessor)
         for (const s of ss) {
-            const g = s.getParent().getChildrenOfKind(ts.SyntaxKind.GetAccessor).find(g => s.getName() === g.getName())
+            const g = s.getGetAccessor()
             if (!g) {
-                s.replaceWithText(`${s.getName()}: ${s.getType().getText()}`)
+                const firstParam = s.getParameters()[0]
+                const paramTypeNode = firstParam && firstParam.getTypeNode()
+                s.replaceWithText(`${getModifiersText(s)}${s.getName()}: ${paramTypeNode && paramTypeNode.getText() || "any"}`)
             }
         }
-        f.copy(path.join(cwd(), target, path.relative(path.join(cwd(), src), f.getFilePath())), { overwrite: true })
-        f.refreshFromFileSystemSync()
     }
-    await project.save()
+    await targetDir.save()
+}
+
+/**
+ * @param {import("ts-morph").ModifierableNode} node
+ */
+function getModifiersText(node) {
+    const modifiersText = node.getModifiers().map(m => m.getText()).join(" ")
+    return modifiersText.length > 0 ? modifiersText + " " : ""
 }
 module.exports.main = main
 
