@@ -13,6 +13,13 @@
     "ts-morph": "^6.0.2"
   },
   "devDependencies": {
-    "jest": "^24.9.0"
-  }
+    "husky": "^4.0.0",
+    "jest": "^24.9.0",
+    "pretty-quick": "^2.0.1"
+  },
+    "husky": {
+        "hooks": {
+            "pre-commit": "pretty-quick --staged"
+        }
+    },
 }
