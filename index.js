@@ -11,6 +11,9 @@ const project = new Project({
     tsConfigFilePath: path.join(src, "tsconfig.json")
 })
 for (const f of project.getSourceFiles("**/*.d.ts")) {
+    if (f.isInNodeModules()) {
+        continue;
+    }
     const gs = f.getDescendantsOfKind(ts.SyntaxKind.GetAccessor)
     for (const g of gs) {
         const s = g.getParent().getChildrenOfKind(ts.SyntaxKind.SetAccessor).find(s => s.getName() === g.getName())
