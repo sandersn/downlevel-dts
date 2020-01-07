@@ -1,4 +1,6 @@
-const { Project, ts } = require("ts-morph")
+#!/usr/bin/env node
+
+const { Project, ts } = require("ts-morph");
 const { cwd } = require('process')
 const path = require('path')
 
