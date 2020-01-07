@@ -14,7 +14,9 @@ function suite(description, tests) {
 }
 suite("main", {
     async works() {
-        fs.rmdirSync("test/ts3.4", { recursive: true })
+        if (fs.existsSync("test/ts3.4")) {
+            fs.rmdirSync("test/ts3.4", { recursive: true })
+        }
         await main("test", "test/ts3.4")
         console.log(process.cwd())
         expect(fs.readFileSync("baselines/ts3.4/test.d.ts", "utf8")).toEqual(fs.readFileSync("test/ts3.4/test.d.ts", "utf8"))
