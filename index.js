@@ -15,6 +15,7 @@ function doTransform(k) {
    */
   const transform = function(n) {
     if (ts.isGetAccessor(n)) {
+      // get x(): number => x: number
       let flags = ts.getCombinedModifierFlags(n);
       if (!getMatchingAccessor(n, "get")) {
         flags |= ts.ModifierFlags.Readonly;
@@ -29,6 +30,8 @@ function doTransform(k) {
         /*initialiser*/ undefined
       );
     } else if (ts.isSetAccessor(n)) {
+      // set x(value: number) => x: number
+      let flags = ts.getCombinedModifierFlags(n);
       if (getMatchingAccessor(n, "set")) {
         return undefined;
       } else {
@@ -48,17 +51,18 @@ function doTransform(k) {
       n.moduleSpecifier &&
       ts.isNamespaceExport(n.exportClause)
     ) {
-      // import * as ns from 'x'
-      // export { ns };
-      console.log("got one");
-      // TODO: Probably should crib this from the emit code
+      // export * as ns from 'x'
+      //  =>
+      // import * as ns_1 from 'x'
+      // export { ns_1 as ns }
+      const tempName = ts.createUniqueName(n.exportClause.name.getText());
       return [
         ts.createImportDeclaration(
           n.decorators,
           n.modifiers,
           ts.createImportClause(
             /*name*/ undefined,
-            ts.createNamespaceImport(n.exportClause.name)
+            ts.createNamespaceImport(tempName)
           ),
           n.moduleSpecifier
         ),
@@ -66,7 +70,7 @@ function doTransform(k) {
           undefined,
           undefined,
           ts.createNamedExports([
-            ts.createExportSpecifier(undefined, n.exportClause.name)
+            ts.createExportSpecifier(tempName, n.exportClause.name)
           ]),
           n.moduleSpecifier
         )
@@ -116,11 +120,10 @@ function main(src, target) {
   );
   const checker = program.getTypeChecker(); // just used for setting parent pointers right now
   const files = mapDefined(program.getRootFileNames(), program.getSourceFile);
-  const resultat = ts.transform(files, [doTransform]);
   const printer = ts.createPrinter({
     newLine: ts.NewLineKind.CarriageReturnLineFeed
   });
-  for (const t of resultat.transformed) {
+  for (const t of ts.transform(files, [doTransform]).transformed) {
     const f = /** @type {import("typescript").SourceFile} */ (t);
     const targetPath = path.join(target, f.fileName.slice(src.length));
     sh.mkdir("-p", path.dirname(targetPath));
