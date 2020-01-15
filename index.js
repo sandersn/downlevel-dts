@@ -24,9 +24,9 @@ function doTransform(k) {
         n.decorators,
         modifiers,
         n.name,
-        undefined,
+        /*?! token*/ undefined,
         defaultAny(n.type),
-        undefined
+        /*initialiser*/ undefined
       );
     } else if (ts.isSetAccessor(n)) {
       if (getMatchingAccessor(n, "set")) {
@@ -37,9 +37,9 @@ function doTransform(k) {
           n.decorators,
           n.modifiers,
           n.name,
-          undefined,
+          /*?! token*/ undefined,
           defaultAny(n.parameters[0].type),
-          undefined
+          /*initialiser*/ undefined
         );
       }
     }
@@ -52,7 +52,11 @@ function doTransform(k) {
 function defaultAny(t) {
   return t || ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword);
 }
-/** @param {import("typescript").AccessorDeclaration} n @param {'get' | 'set'} getset */
+
+/**
+ * @param {import("typescript").AccessorDeclaration} n
+ * @param {'get' | 'set'} getset
+ */
 function getMatchingAccessor(n, getset) {
   if (!ts.isClassDeclaration(n.parent))
     throw new Error(
