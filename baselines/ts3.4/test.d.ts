@@ -1,12 +1,12 @@
 export class C {
-    p: number
-    readonly q: string
-    r: boolean
+  protected p: number;
+  public readonly q: string;
+  private r: boolean;
 }
 export namespace N {
-    class D {
-        p: number
-        readonly q: string
-        r: boolean
-    }
+  abstract class D {
+    p: number;
+    readonly q: any;
+    abstract r: boolean;
+  }
 }
