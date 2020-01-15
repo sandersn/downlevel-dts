@@ -12,3 +12,5 @@ export namespace N {
     abstract set r(value: boolean);
   }
 }
+
+export * as rex from "src/test";
