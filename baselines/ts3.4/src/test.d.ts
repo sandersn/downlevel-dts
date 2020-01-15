@@ -10,3 +10,4 @@ export namespace N {
         r: boolean;
     }
 }
+export { C as DetectiveComics };

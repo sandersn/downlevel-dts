@@ -12,3 +12,5 @@ export namespace N {
         set r(value: boolean)
     }
 }
+
+export type { C as DetectiveComics };

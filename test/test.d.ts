@@ -12,5 +12,6 @@ export namespace N {
     abstract set r(value: boolean);
   }
 }
+import type { C as CD } from "./src/test";
 
-export * as rex from "src/test";
+export * as rex from "./src/test";
