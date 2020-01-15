@@ -5,14 +5,18 @@
   "main": "index.js",
   "bin": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "baseline-accept": "cp -r test/ts3.4 baselines"
   },
   "author": "Nathan Shively-Sanders",
   "license": "MIT",
   "dependencies": {
-    "ts-morph": "^6.0.2"
+    "shelljs": "^0.8.3",
+    "typescript": "^3.8.0-dev.20200111"
   },
   "devDependencies": {
+    "@types/node": "^13.1.6",
+    "@types/shelljs": "^0.8.6",
     "husky": "^4.0.0",
     "jest": "^24.9.0",
     "prettier": "^1.19.1",

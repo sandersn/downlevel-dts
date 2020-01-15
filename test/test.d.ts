@@ -1,14 +1,14 @@
 export class C {
-    get p(): number
-    set p(value: number)
-    get q(): string
-    set r(value: boolean)
+  protected get p(): number;
+  protected set p(value: number);
+  public get q(): string;
+  private set r(value: boolean);
 }
 export namespace N {
-    class D {
-        get p(): number
-        set p(value: number)
-        get q(): string
-        set r(value: boolean)
-    }
+  abstract class D {
+    get p(): number;
+    set p(value: number);
+    get q();
+    abstract set r(value: boolean);
+  }
 }

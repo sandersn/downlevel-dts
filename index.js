@@ -1,79 +1,122 @@
 #!/usr/bin/env node
-
-const { Project, ts } = require("ts-morph");
+const sh = require("shelljs");
+const fs = require("fs");
+const ts = require("typescript");
 const path = require("path");
+const assert = require("assert");
 
+/** @typedef {import("typescript").Node} Node */
+
+/** @param {import("typescript").TransformationContext} k */
+function doTransform(k) {
+  /**
+   * @param {Node} n
+   * @return {Node}
+   */
+  const transform = function(n) {
+    if (ts.isGetAccessor(n)) {
+      let flags = ts.getCombinedModifierFlags(n);
+      if (!getMatchingAccessor(n, "get")) {
+        flags |= ts.ModifierFlags.Readonly;
+      }
+      const modifiers = ts.createModifiersFromModifierFlags(flags);
+      return ts.createProperty(
+        n.decorators,
+        modifiers,
+        n.name,
+        /*?! token*/ undefined,
+        defaultAny(n.type),
+        /*initialiser*/ undefined
+      );
+    } else if (ts.isSetAccessor(n)) {
+      if (getMatchingAccessor(n, "set")) {
+        return /** @type {*} */ (undefined);
+      } else {
+        assert(n.parameters && n.parameters.length);
+        return ts.createProperty(
+          n.decorators,
+          n.modifiers,
+          n.name,
+          /*?! token*/ undefined,
+          defaultAny(n.parameters[0].type),
+          /*initialiser*/ undefined
+        );
+      }
+    }
+    return ts.visitEachChild(n, transform, k);
+  };
+  return transform;
+}
+
+/** @param {import("typescript").TypeNode | undefined} t */
+function defaultAny(t) {
+  return t || ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword);
+}
+
+/**
+ * @param {import("typescript").AccessorDeclaration} n
+ * @param {'get' | 'set'} getset
+ */
+function getMatchingAccessor(n, getset) {
+  if (!ts.isClassDeclaration(n.parent))
+    throw new Error(
+      "Bad AST -- accessor parent should be a class declaration."
+    );
+  const isOther = getset === "get" ? ts.isSetAccessor : ts.isGetAccessor;
+  return n.parent.members.some(
+    m => isOther(m) && m.name.getText() === n.name.getText()
+  );
+}
 /**
  * @param {string} src
  * @param {string} target
  */
-async function main(src, target) {
+function main(src, target) {
   if (!src || !target) {
-    console.log("Usage: node ../index.js . ts3.4");
+    console.log("Usage: node index.js test test/ts3.4");
     process.exit(1);
   }
-  const project = new Project({
-    tsConfigFilePath: path.join(src, "tsconfig.json")
+
+  // TODO: target path is probably wrong for absolute src (or target?)
+  // TODO: Probably will want to alter package.json if discovered in the right place.
+  const program = ts.createProgram(
+    sh
+      .find(path.join(src))
+      .filter(f => f.endsWith(".d.ts") && !/node_modules/.test(f)),
+    {}
+  );
+  const checker = program.getTypeChecker(); // just used for setting parent pointers right now
+  const files = mapDefined(program.getRootFileNames(), program.getSourceFile);
+  const resultat = ts.transform(files, [doTransform]);
+  const printer = ts.createPrinter({
+    newLine: ts.NewLineKind.CarriageReturnLineFeed
   });
-  const targetDir = project.createDirectory(target);
-
-  for (const f of project.getSourceFiles("**/*.d.ts")) {
-    if (f.isInNodeModules()) {
-      continue;
-    }
-    const newFile = targetDir.createSourceFile(
-      project.getDirectoryOrThrow(src).getRelativePathTo(f),
-      f.getFullText(),
-      { overwrite: true }
-    );
-    const gs = newFile.getDescendantsOfKind(ts.SyntaxKind.GetAccessor);
-    for (const g of gs) {
-      const s = g.getSetAccessor();
-      const returnTypeNode = g.getReturnTypeNode();
-      g.replaceWithText(
-        `${getModifiersText(g)}${
-          s ? "" : "readonly "
-        }${g.getName()}: ${(returnTypeNode && returnTypeNode.getText()) ||
-          "any"}`
-      );
-      if (s) {
-        s.remove();
-      }
-    }
-    const ss = newFile.getDescendantsOfKind(ts.SyntaxKind.SetAccessor);
-    for (const s of ss) {
-      const g = s.getGetAccessor();
-      if (!g) {
-        const firstParam = s.getParameters()[0];
-        const paramTypeNode = firstParam && firstParam.getTypeNode();
-        s.replaceWithText(
-          `${getModifiersText(s)}${s.getName()}: ${(paramTypeNode &&
-            paramTypeNode.getText()) ||
-            "any"}`
-        );
-      }
-    }
+  for (const t of resultat.transformed) {
+    const f = /** @type {import("typescript").SourceFile} */ (t);
+    const targetPath = path.join(target, f.fileName.slice(src.length));
+    sh.mkdir("-p", path.dirname(targetPath));
+    fs.writeFileSync(targetPath, printer.printFile(f));
   }
-  await targetDir.save();
-}
-
-/**
- * @param {import("ts-morph").ModifierableNode} node
- */
-function getModifiersText(node) {
-  const modifiersText = node
-    .getModifiers()
-    .map(m => m.getText())
-    .join(" ");
-  return modifiersText.length > 0 ? modifiersText + " " : "";
 }
 module.exports.main = main;
 
-if (!(/** @type {*} */ (module).parent)) {
+if (!(/** @type {*} */ (module.parent))) {
   const src = process.argv[2];
   const target = process.argv[3];
-  main(src, target).catch(e => {
-    console.log(e);
-    process.exit(1);
-  });
+  main(src, target);
+}
+
+/**
+ * @template T,U
+ * @param {readonly T[]} l
+ * @param {(t: T) => U | false | undefined} f
+ * @return {U[]}
+ */
+function mapDefined(l, f) {
+  const acc = [];
+  for (const x of l) {
+    const y = f(x);
+    if (y) acc.push(y);
+  }
+  return acc;
 }
