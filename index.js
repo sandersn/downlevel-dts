@@ -11,10 +11,11 @@ const assert = require("assert");
 function doTransform(k) {
   /**
    * @param {Node} n
-   * @return {Node}
+   * @return {import("typescript").VisitResult<Node>}
    */
   const transform = function(n) {
     if (ts.isGetAccessor(n)) {
+      // get x(): number => x: number
       let flags = ts.getCombinedModifierFlags(n);
       if (!getMatchingAccessor(n, "get")) {
         flags |= ts.ModifierFlags.Readonly;
@@ -29,8 +30,10 @@ function doTransform(k) {
         /*initialiser*/ undefined
       );
     } else if (ts.isSetAccessor(n)) {
+      // set x(value: number) => x: number
+      let flags = ts.getCombinedModifierFlags(n);
       if (getMatchingAccessor(n, "set")) {
-        return /** @type {*} */ (undefined);
+        return undefined;
       } else {
         assert(n.parameters && n.parameters.length);
         return ts.createProperty(
@@ -42,6 +45,36 @@ function doTransform(k) {
           /*initialiser*/ undefined
         );
       }
+    } else if (
+      ts.isExportDeclaration(n) &&
+      n.exportClause &&
+      n.moduleSpecifier &&
+      ts.isNamespaceExport(n.exportClause)
+    ) {
+      // export * as ns from 'x'
+      //  =>
+      // import * as ns_1 from 'x'
+      // export { ns_1 as ns }
+      const tempName = ts.createUniqueName(n.exportClause.name.getText());
+      return [
+        ts.createImportDeclaration(
+          n.decorators,
+          n.modifiers,
+          ts.createImportClause(
+            /*name*/ undefined,
+            ts.createNamespaceImport(tempName)
+          ),
+          n.moduleSpecifier
+        ),
+        ts.createExportDeclaration(
+          undefined,
+          undefined,
+          ts.createNamedExports([
+            ts.createExportSpecifier(tempName, n.exportClause.name)
+          ]),
+          n.moduleSpecifier
+        )
+      ];
     }
     return ts.visitEachChild(n, transform, k);
   };
@@ -87,11 +120,10 @@ function main(src, target) {
   );
   const checker = program.getTypeChecker(); // just used for setting parent pointers right now
   const files = mapDefined(program.getRootFileNames(), program.getSourceFile);
-  const resultat = ts.transform(files, [doTransform]);
   const printer = ts.createPrinter({
     newLine: ts.NewLineKind.CarriageReturnLineFeed
   });
-  for (const t of resultat.transformed) {
+  for (const t of ts.transform(files, [doTransform]).transformed) {
     const f = /** @type {import("typescript").SourceFile} */ (t);
     const targetPath = path.join(target, f.fileName.slice(src.length));
     sh.mkdir("-p", path.dirname(targetPath));
