@@ -75,6 +75,15 @@ function doTransform(k) {
           n.moduleSpecifier
         )
       ];
+    } else if (ts.isExportDeclaration(n) && n.isTypeOnly) {
+      return ts.createExportDeclaration(
+        n.decorators,
+        n.modifiers,
+        n.exportClause,
+        n.moduleSpecifier
+      );
+    } else if (ts.isImportClause(n) && n.isTypeOnly) {
+      return ts.createImportClause(n.name, n.namedBindings);
     }
     return ts.visitEachChild(n, transform, k);
   };
