@@ -88,7 +88,9 @@ function main(src, target) {
   const checker = program.getTypeChecker(); // just used for setting parent pointers right now
   const files = mapDefined(program.getRootFileNames(), program.getSourceFile);
   const resultat = ts.transform(files, [doTransform]);
-  const printer = ts.createPrinter();
+  const printer = ts.createPrinter({
+    newLine: ts.NewLineKind.CarriageReturnLineFeed
+  });
   for (const t of resultat.transformed) {
     const f = /** @type {import("typescript").SourceFile} */ (t);
     const targetPath = path.join(target, f.fileName.slice(src.length));
