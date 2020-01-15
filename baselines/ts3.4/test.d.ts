@@ -10,4 +10,5 @@ export namespace N {
         abstract r: boolean;
     }
 }
-export * as rex from "src/test";
+import * as rex from "src/test";
+export { rex } from "src/test";

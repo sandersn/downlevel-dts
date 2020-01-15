@@ -11,7 +11,7 @@ const assert = require("assert");
 function doTransform(k) {
   /**
    * @param {Node} n
-   * @return {Node}
+   * @return {import("typescript").VisitResult<Node>}
    */
   const transform = function(n) {
     if (ts.isGetAccessor(n)) {
@@ -30,7 +30,7 @@ function doTransform(k) {
       );
     } else if (ts.isSetAccessor(n)) {
       if (getMatchingAccessor(n, "set")) {
-        return /** @type {*} */ (undefined);
+        return undefined;
       } else {
         assert(n.parameters && n.parameters.length);
         return ts.createProperty(
@@ -42,6 +42,35 @@ function doTransform(k) {
           /*initialiser*/ undefined
         );
       }
+    } else if (
+      ts.isExportDeclaration(n) &&
+      n.exportClause &&
+      n.moduleSpecifier &&
+      ts.isNamespaceExport(n.exportClause)
+    ) {
+      // import * as ns from 'x'
+      // export { ns };
+      console.log("got one");
+      // TODO: Probably should crib this from the emit code
+      return [
+        ts.createImportDeclaration(
+          n.decorators,
+          n.modifiers,
+          ts.createImportClause(
+            /*name*/ undefined,
+            ts.createNamespaceImport(n.exportClause.name)
+          ),
+          n.moduleSpecifier
+        ),
+        ts.createExportDeclaration(
+          undefined,
+          undefined,
+          ts.createNamedExports([
+            ts.createExportSpecifier(undefined, n.exportClause.name)
+          ]),
+          n.moduleSpecifier
+        )
+      ];
     }
     return ts.visitEachChild(n, transform, k);
   };
