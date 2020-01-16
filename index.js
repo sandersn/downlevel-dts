@@ -6,6 +6,43 @@ const path = require("path");
 const assert = require("assert");
 
 /** @typedef {import("typescript").Node} Node */
+/**
+ * @param {string} src
+ * @param {string} target
+ */
+function main(src, target) {
+  if (!src || !target) {
+    console.log("Usage: node index.js test test/ts3.4");
+    process.exit(1);
+  }
+
+  // TODO: target path is probably wrong for absolute src (or target?)
+  // TODO: Probably will want to alter package.json if discovered in the right place.
+  const program = ts.createProgram(
+    sh
+      .find(path.join(src))
+      .filter(f => f.endsWith(".d.ts") && !/node_modules/.test(f)),
+    {}
+  );
+  const checker = program.getTypeChecker(); // just used for setting parent pointers right now
+  const files = mapDefined(program.getRootFileNames(), program.getSourceFile);
+  const printer = ts.createPrinter({
+    newLine: ts.NewLineKind.CarriageReturnLineFeed
+  });
+  for (const t of ts.transform(files, [doTransform]).transformed) {
+    const f = /** @type {import("typescript").SourceFile} */ (t);
+    const targetPath = path.join(target, f.fileName.slice(src.length));
+    sh.mkdir("-p", path.dirname(targetPath));
+    fs.writeFileSync(targetPath, dedupeTripleSlash(printer.printFile(f)));
+  }
+}
+module.exports.main = main;
+
+if (!(/** @type {*} */ (module.parent))) {
+  const src = process.argv[2];
+  const target = process.argv[3];
+  main(src, target);
+}
 
 /** @param {import("typescript").TransformationContext} k */
 function doTransform(k) {
@@ -109,42 +146,12 @@ function getMatchingAccessor(n, getset) {
     m => isOther(m) && m.name.getText() === n.name.getText()
   );
 }
-/**
- * @param {string} src
- * @param {string} target
- */
-function main(src, target) {
-  if (!src || !target) {
-    console.log("Usage: node index.js test test/ts3.4");
-    process.exit(1);
-  }
 
-  // TODO: target path is probably wrong for absolute src (or target?)
-  // TODO: Probably will want to alter package.json if discovered in the right place.
-  const program = ts.createProgram(
-    sh
-      .find(path.join(src))
-      .filter(f => f.endsWith(".d.ts") && !/node_modules/.test(f)),
-    {}
-  );
-  const checker = program.getTypeChecker(); // just used for setting parent pointers right now
-  const files = mapDefined(program.getRootFileNames(), program.getSourceFile);
-  const printer = ts.createPrinter({
-    newLine: ts.NewLineKind.CarriageReturnLineFeed
-  });
-  for (const t of ts.transform(files, [doTransform]).transformed) {
-    const f = /** @type {import("typescript").SourceFile} */ (t);
-    const targetPath = path.join(target, f.fileName.slice(src.length));
-    sh.mkdir("-p", path.dirname(targetPath));
-    fs.writeFileSync(targetPath, printer.printFile(f));
-  }
-}
-module.exports.main = main;
-
-if (!(/** @type {*} */ (module.parent))) {
-  const src = process.argv[2];
-  const target = process.argv[3];
-  main(src, target);
+/** @param {string} s */
+function dedupeTripleSlash(s) {
+  const lines = s.split("\n");
+  const i = lines.findIndex(line => !line.startsWith("/// <reference "));
+  return [...new Set(lines.slice(0, i)), ...lines.slice(i)].join("\n");
 }
 
 /**

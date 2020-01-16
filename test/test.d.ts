@@ -1,10 +1,12 @@
 /// <reference types="node" />
+/// <reference path="./src/test.d.ts" />
 export class C {
   protected get p(): number;
   protected set p(value: number);
   public get q(): string;
   private set r(value: boolean);
 }
+// hi, this should still be there
 export namespace N {
   abstract class D {
     get p(): number;
