@@ -1,3 +1,5 @@
+/// <reference types="node" />
+/// <reference types="node" />
 export class C {
     protected p: number;
     public readonly q: string;

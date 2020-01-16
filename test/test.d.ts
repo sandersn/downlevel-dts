@@ -1,3 +1,4 @@
+/// <reference types="node" />
 export class C {
   protected get p(): number;
   protected set p(value: number);
