@@ -18,3 +18,10 @@ export namespace N {
 import type { C as CD } from "./src/test";
 
 export * as rex from "./src/test";
+
+export interface E {
+  a: number;
+  b: number;
+}
+
+export type F = Omit<E, 'a'>;

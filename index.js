@@ -121,6 +121,16 @@ function doTransform(k) {
       );
     } else if (ts.isImportClause(n) && n.isTypeOnly) {
       return ts.createImportClause(n.name, n.namedBindings);
+    } else if (ts.isTypeReferenceNode(n) && n.typeName.escapedText === "Omit") {
+      const child = n.getChildAt(2);
+
+      return ts.createTypeReferenceNode(ts.createIdentifier("Pick"), [
+        child.getChildAt(0),
+        ts.createTypeReferenceNode(ts.createIdentifier("Exclude"), [
+          ts.createTypeOperatorNode(child.getChildAt(0)),
+          child.getChildAt(2)
+        ])
+      ]);
     }
     return ts.visitEachChild(n, transform, k);
   };
