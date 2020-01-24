@@ -11,3 +11,9 @@ export namespace N {
     }
 }
 export { C as DetectiveComics };
+export type Omit<T, K extends keyof any> = Pick<T, Exclude<keyof T, K>>;
+export interface E {
+    a: number;
+    b: number;
+}
+export type F = Omit<E, 'a'>;
