@@ -125,7 +125,11 @@ function doTransform(checker, k) {
       );
     } else if (ts.isImportClause(n) && n.isTypeOnly) {
       return ts.createImportClause(n.name, n.namedBindings);
-    } else if (ts.isTypeReferenceNode(n) && n.typeName.escapedText === "Omit") {
+    } else if (
+      ts.isTypeReferenceNode(n) &&
+      ts.isIdentifier(n.typeName) &&
+      n.typeName.escapedText === "Omit"
+    ) {
       const symbol = checker.getSymbolAtLocation(n.typeName);
       const typeArguments = n.typeArguments;
 
