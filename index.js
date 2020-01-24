@@ -130,8 +130,8 @@ function doTransform(checker, k) {
       const typeArguments = n.typeArguments;
 
       if (
-        symbol !== undefined &&
-        symbol.declarations.length > 0 &&
+        symbol &&
+        symbol.declarations.length &&
         symbol.declarations[0]
           .getSourceFile()
           .fileName.includes("node_modules/typescript/lib/lib") &&
