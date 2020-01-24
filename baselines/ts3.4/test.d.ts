@@ -16,3 +16,8 @@ export namespace N {
 import { C as CD } from "./src/test";
 import * as rex_1 from "./src/test";
 export { rex_1 as rex } from "./src/test";
+export interface E {
+    a: number;
+    b: number;
+}
+export type F = Pick<E, Exclude<keyof E, 'a'>>;

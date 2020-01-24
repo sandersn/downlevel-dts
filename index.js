@@ -29,7 +29,8 @@ function main(src, target) {
   const printer = ts.createPrinter({
     newLine: ts.NewLineKind.CarriageReturnLineFeed
   });
-  for (const t of ts.transform(files, [doTransform]).transformed) {
+  for (const t of ts.transform(files, [doTransform.bind(null, checker)])
+    .transformed) {
     const f = /** @type {import("typescript").SourceFile} */ (t);
     const targetPath = path.join(target, f.fileName.slice(src.length));
     sh.mkdir("-p", path.dirname(targetPath));
@@ -44,8 +45,11 @@ if (!(/** @type {*} */ (module.parent))) {
   main(src, target);
 }
 
-/** @param {import("typescript").TransformationContext} k */
-function doTransform(k) {
+/**
+ * @param {import("typescript").TypeChecker} checker
+ * @param {import("typescript").TransformationContext} k
+ */
+function doTransform(checker, k) {
   /**
    * @param {Node} n
    * @return {import("typescript").VisitResult<Node>}
@@ -121,6 +125,30 @@ function doTransform(k) {
       );
     } else if (ts.isImportClause(n) && n.isTypeOnly) {
       return ts.createImportClause(n.name, n.namedBindings);
+    } else if (
+      ts.isTypeReferenceNode(n) &&
+      ts.isIdentifier(n.typeName) &&
+      n.typeName.escapedText === "Omit"
+    ) {
+      const symbol = checker.getSymbolAtLocation(n.typeName);
+      const typeArguments = n.typeArguments;
+
+      if (
+        symbol &&
+        symbol.declarations.length &&
+        symbol.declarations[0]
+          .getSourceFile()
+          .fileName.includes("node_modules/typescript/lib/lib") &&
+        typeArguments
+      ) {
+        return ts.createTypeReferenceNode(ts.createIdentifier("Pick"), [
+          typeArguments[0],
+          ts.createTypeReferenceNode(ts.createIdentifier("Exclude"), [
+            ts.createTypeOperatorNode(typeArguments[0]),
+            typeArguments[1]
+          ])
+        ]);
+      }
     }
     return ts.visitEachChild(n, transform, k);
   };
