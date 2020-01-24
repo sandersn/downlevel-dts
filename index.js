@@ -127,21 +127,21 @@ function doTransform(checker, k) {
       return ts.createImportClause(n.name, n.namedBindings);
     } else if (ts.isTypeReferenceNode(n) && n.typeName.escapedText === "Omit") {
       const symbol = checker.getSymbolAtLocation(n.typeName);
+      const typeArguments = n.typeArguments;
 
       if (
         symbol !== undefined &&
         symbol.declarations.length > 0 &&
         symbol.declarations[0]
           .getSourceFile()
-          .fileName.includes("node_modules/typescript/lib/lib")
+          .fileName.includes("node_modules/typescript/lib/lib") &&
+        typeArguments
       ) {
-        const child = n.getChildAt(2);
-
         return ts.createTypeReferenceNode(ts.createIdentifier("Pick"), [
-          child.getChildAt(0),
+          typeArguments[0],
           ts.createTypeReferenceNode(ts.createIdentifier("Exclude"), [
-            ts.createTypeOperatorNode(child.getChildAt(0)),
-            child.getChildAt(2)
+            ts.createTypeOperatorNode(typeArguments[0]),
+            typeArguments[1]
           ])
         ]);
       }
