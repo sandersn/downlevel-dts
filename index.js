@@ -32,7 +32,10 @@ function main(src, target) {
   for (const t of ts.transform(files, [doTransform.bind(null, checker)])
     .transformed) {
     const f = /** @type {import("typescript").SourceFile} */ (t);
-    const targetPath = path.join(target, f.fileName.slice(src.length));
+    const targetPath = path.join(
+      target,
+      path.resolve(f.fileName).slice(path.resolve(src).length)
+    );
     sh.mkdir("-p", path.dirname(targetPath));
     fs.writeFileSync(targetPath, dedupeTripleSlash(printer.printFile(f)));
   }
