@@ -34,7 +34,7 @@ function main(src, target) {
     const f = /** @type {import("typescript").SourceFile} */ (t);
     const targetPath = path.join(
       target,
-      f.path.slice(path.resolve(src).length)
+      path.resolve(f.fileName).slice(path.resolve(src).length)
     );
     sh.mkdir("-p", path.dirname(targetPath));
     fs.writeFileSync(targetPath, dedupeTripleSlash(printer.printFile(f)));
