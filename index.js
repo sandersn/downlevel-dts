@@ -90,6 +90,22 @@ function doTransform(checker, k) {
         );
       }
     } else if (
+      ts.isPropertyDeclaration(n) &&
+      ts.isPrivateIdentifier(n.name) &&
+      n.name.escapedText === "#private"
+    ) {
+      const modifiers = ts.createModifiersFromModifierFlags(
+        ts.ModifierFlags.Private
+      );
+      return ts.createProperty(
+        n.decorators,
+        modifiers,
+        ts.createStringLiteral("#private"),
+        /*?! token*/ undefined,
+        /*type*/ undefined,
+        /*initialiser*/ undefined
+      );
+    } else if (
       ts.isExportDeclaration(n) &&
       n.exportClause &&
       n.moduleSpecifier &&
