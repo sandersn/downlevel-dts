@@ -47,7 +47,6 @@ if (!(/** @type {*} */ (module.parent))) {
   const target = process.argv[3];
   main(src, target);
 }
-
 /**
  * @param {import("typescript").TypeChecker} checker
  * @param {import("typescript").TransformationContext} k
