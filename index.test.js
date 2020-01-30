@@ -19,11 +19,11 @@ suite("main", {
       sh.rm("-r", "test/ts3.4");
     }
     main("test", "test/ts3.4");
-    expect(fs.readFileSync("baselines/ts3.4/test.d.ts", "utf8")).toEqual(
-      fs.readFileSync("test/ts3.4/test.d.ts", "utf8")
+    expect(fs.readFileSync("test/ts3.4/test.d.ts", "utf8")).toEqual(
+      fs.readFileSync("baselines/ts3.4/test.d.ts", "utf8")
     );
-    expect(fs.readFileSync("baselines/ts3.4/src/test.d.ts", "utf8")).toEqual(
-      fs.readFileSync("test/ts3.4/src/test.d.ts", "utf8")
+    expect(fs.readFileSync("test/ts3.4/src/test.d.ts", "utf8")).toEqual(
+      fs.readFileSync("baselines/ts3.4/src/test.d.ts", "utf8")
     );
   }
 });
