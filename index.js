@@ -82,14 +82,9 @@ function doTransform(checker, k) {
           /*initialiser*/ undefined
         );
       }
-    } else if (
-      ts.isPropertyDeclaration(n) &&
-      ts.isPrivateIdentifier(n.name) &&
-      n.name.escapedText === "#private"
-    ) {
-      const modifiers = ts.createModifiersFromModifierFlags(
-        ts.ModifierFlags.Private
-      );
+    } else if (ts.isPropertyDeclaration(n) && ts.isPrivateIdentifier(n.name) && n.name.escapedText === "#private") {
+      // #private => private "#private"
+      const modifiers = ts.createModifiersFromModifierFlags(ts.ModifierFlags.Private);
       return ts.createProperty(
         n.decorators,
         modifiers,
