@@ -19,9 +19,7 @@ function main(src, target) {
   // TODO: target path is probably wrong for absolute src (or target?)
   // TODO: Probably will want to alter package.json if discovered in the right place.
   const program = ts.createProgram(
-    sh
-      .find(path.join(src))
-      .filter(f => f.endsWith(".d.ts") && !/node_modules/.test(f)),
+    sh.find(path.join(src)).filter(f => f.endsWith(".d.ts") && !/node_modules/.test(f)),
     {}
   );
   const checker = program.getTypeChecker(); // just used for setting parent pointers right now
@@ -29,13 +27,9 @@ function main(src, target) {
   const printer = ts.createPrinter({
     newLine: ts.NewLineKind.CarriageReturnLineFeed
   });
-  for (const t of ts.transform(files, [doTransform.bind(null, checker)])
-    .transformed) {
+  for (const t of ts.transform(files, [doTransform.bind(null, checker)]).transformed) {
     const f = /** @type {import("typescript").SourceFile} */ (t);
-    const targetPath = path.join(
-      target,
-      path.resolve(f.fileName).slice(path.resolve(src).length)
-    );
+    const targetPath = path.join(target, path.resolve(f.fileName).slice(path.resolve(src).length));
     sh.mkdir("-p", path.dirname(targetPath));
     fs.writeFileSync(targetPath, dedupeTripleSlash(printer.printFile(f)));
   }
@@ -47,7 +41,6 @@ if (!(/** @type {*} */ (module.parent))) {
   const target = process.argv[3];
   main(src, target);
 }
-
 /**
  * @param {import("typescript").TypeChecker} checker
  * @param {import("typescript").TransformationContext} k
@@ -104,44 +97,28 @@ function doTransform(checker, k) {
         ts.createImportDeclaration(
           n.decorators,
           n.modifiers,
-          ts.createImportClause(
-            /*name*/ undefined,
-            ts.createNamespaceImport(tempName)
-          ),
+          ts.createImportClause(/*name*/ undefined, ts.createNamespaceImport(tempName)),
           n.moduleSpecifier
         ),
         ts.createExportDeclaration(
           undefined,
           undefined,
-          ts.createNamedExports([
-            ts.createExportSpecifier(tempName, n.exportClause.name)
-          ]),
+          ts.createNamedExports([ts.createExportSpecifier(tempName, n.exportClause.name)]),
           n.moduleSpecifier
         )
       ];
     } else if (ts.isExportDeclaration(n) && n.isTypeOnly) {
-      return ts.createExportDeclaration(
-        n.decorators,
-        n.modifiers,
-        n.exportClause,
-        n.moduleSpecifier
-      );
+      return ts.createExportDeclaration(n.decorators, n.modifiers, n.exportClause, n.moduleSpecifier);
     } else if (ts.isImportClause(n) && n.isTypeOnly) {
       return ts.createImportClause(n.name, n.namedBindings);
-    } else if (
-      ts.isTypeReferenceNode(n) &&
-      ts.isIdentifier(n.typeName) &&
-      n.typeName.escapedText === "Omit"
-    ) {
+    } else if (ts.isTypeReferenceNode(n) && ts.isIdentifier(n.typeName) && n.typeName.escapedText === "Omit") {
       const symbol = checker.getSymbolAtLocation(n.typeName);
       const typeArguments = n.typeArguments;
 
       if (
         symbol &&
         symbol.declarations.length &&
-        symbol.declarations[0]
-          .getSourceFile()
-          .fileName.includes("node_modules/typescript/lib/lib") &&
+        symbol.declarations[0].getSourceFile().fileName.includes("node_modules/typescript/lib/lib") &&
         typeArguments
       ) {
         return ts.createTypeReferenceNode(ts.createIdentifier("Pick"), [
@@ -168,14 +145,9 @@ function defaultAny(t) {
  * @param {'get' | 'set'} getset
  */
 function getMatchingAccessor(n, getset) {
-  if (!ts.isClassDeclaration(n.parent))
-    throw new Error(
-      "Bad AST -- accessor parent should be a class declaration."
-    );
+  if (!ts.isClassDeclaration(n.parent)) throw new Error("Bad AST -- accessor parent should be a class declaration.");
   const isOther = getset === "get" ? ts.isSetAccessor : ts.isGetAccessor;
-  return n.parent.members.some(
-    m => isOther(m) && m.name.getText() === n.name.getText()
-  );
+  return n.parent.members.some(m => isOther(m) && m.name.getText() === n.name.getText());
 }
 
 /** @param {string} s */
