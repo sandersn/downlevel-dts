@@ -24,7 +24,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "pretty-quick --staged --print-width 120"
+      "pre-commit": "pretty-quick --staged"
     }
   }
 }
