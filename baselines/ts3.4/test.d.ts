@@ -22,5 +22,8 @@ export interface E {
 }
 export type F = Pick<E, Exclude<keyof E, 'a'>>;
 export class G {
-    private "#private";
+    private "G.#private";
+}
+export class H extends G {
+    private "H.#private";
 }

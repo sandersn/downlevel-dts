@@ -29,3 +29,6 @@ export type F = Omit<E, 'a'>;
 export class G {
     #private
 }
+export class H extends G {
+    #private
+}
