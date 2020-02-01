@@ -82,6 +82,18 @@ function doTransform(checker, k) {
           /*initialiser*/ undefined
         );
       }
+    } else if (ts.isPropertyDeclaration(n) && ts.isPrivateIdentifier(n.name) && n.name.escapedText === "#private") {
+      // #private => private "#private"
+      const modifiers = ts.createModifiersFromModifierFlags(ts.ModifierFlags.Private);
+      const parentName = n.parent.name ? n.parent.name.escapedText : "(anonymous)";
+      return ts.createProperty(
+        n.decorators,
+        modifiers,
+        ts.createStringLiteral(parentName + ".#private"),
+        /*?! token*/ undefined,
+        /*type*/ undefined,
+        /*initialiser*/ undefined
+      );
     } else if (
       ts.isExportDeclaration(n) &&
       n.exportClause &&
