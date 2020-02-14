@@ -18,7 +18,7 @@ declare class C {
 }
 ```
 
-## Feature
+## Features
 
 Here is the list of features that are downlevelled:
 
