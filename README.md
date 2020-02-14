@@ -82,7 +82,7 @@ downlevelled, nor are there plans to support Typescript 2.x.
 
 ```json
 "typesVersions": {
-  "<=3.4.0-0": { "*": ["ts3.4/*"] }
+  "<=3.5": { "*": ["ts3.4/*"] }
 }
 ```
 
