@@ -2,6 +2,7 @@
   "name": "downlevel-dts",
   "version": "0.4.0",
   "description": "Convert d.ts to be compatible with older typescript compilers",
+  "homepage": "https://github.com/sandersn/downlevel-dts",
   "main": "index.js",
   "bin": "index.js",
   "scripts": {
