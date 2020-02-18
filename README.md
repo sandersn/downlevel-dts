@@ -22,48 +22,98 @@ declare class C {
 
 Here is the list of features that are downlevelled:
 
-1. Omit
+### `Omit` (3.5)
 
-`Omit<T, K> ==> Pick<T, Exclude<keyof T, K>>`
+```ts
+type Less = Omit<T, K>;
+```
+
+becomes
+
+```ts
+type Less = Pick<T, Exclude<keyof T, K>>;
+```
 
 `Omit` has had non-builtin implementations since Typescript 2.2, but
 became built-in in Typescript 3.5.
 
-2. Accessors
+### Accessors (3.6)
 
 Typescript prevented accessors from being in .d.ts files until
 Typescript 3.6 because they behave very similarly to properties.
 However, they behave differently with inheritance, so the distinction
 can be useful.
 
-`get(): number ==> readonly x: number`
+```ts
+declare class C {
+  get x(): number;
+}
+```
 
-3. Type-only import/export
+becomes
+
+```ts
+declare class C {
+  readonly x: number;
+}
+```
+
+### Type-only import/export (3.8)
 
 Typescript 3.8 supports type-only imports, but they are stricter than
 Typescript's original imports, which let you import types or values.
-The downlevel emit is quite simple:
+So the downlevel emit is quite simple:
 
-`import type { T } from 'x' ==> import { T } from 'x'`
+```ts
+import type { T } from 'x';
+```
 
-4. #private
+becomes
+
+```ts
+import { T } from "x";
+```
+
+### `#private` (3.8)
 
 Typescript 3.8 supports the new ECMAScript-standard #private properties in
 addition to its compile-time-only private properties. Since neither
 are accessible at compile-time, downlevel-dts converts #private
 properties to compile-time private properties:
 
-`#private ==> private "#private"`
+```ts
+declare class C {
+  #private
+}
+```
 
-This is incorrect if your class already has a field named "#private".
-Don't do this!
+(This is the standard emit for _any_ class with a #private property.)
+It becomes:
 
-5. export \* from 'x'
+```ts
+declare class C {
+  private "#private"`
+}
+```
+
+This is incorrect if your class already has a field named `"#private"`.
+But you really shouldn't do this!
+
+### `export * from 'x'` (3.8)
 
 Typescript 3.8 supports the new ECMAScript-standard `export * as namespace` syntax, which is just syntactic sugar for two import/export
 statements:
 
-`export * as ns from 'x' ==> import * as ns_1 from 'x'; export { ns_1 as ns }`
+```ts
+export * as ns from 'x';
+```
+
+becomes
+
+```ts
+import * as ns_1 from "x";
+export { ns_1 as ns };
+```
 
 ## Target
 
