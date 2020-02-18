@@ -99,7 +99,7 @@ declare class C {
 This is incorrect if your class already has a field named `"#private"`.
 But you really shouldn't do this!
 
-### `export \* from 'x'` (3.8)
+### `export * from 'x'` (3.8)
 
 Typescript 3.8 supports the new ECMAScript-standard `export * as namespace` syntax, which is just syntactic sugar for two import/export
 statements:
