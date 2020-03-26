@@ -32,3 +32,7 @@ export class G {
 export class H extends G {
     #private
 }
+
+export interface I extends Omit<E, 'a'> {
+    version: number;
+}

@@ -27,3 +27,6 @@ export class G {
 export class H extends G {
     private "H.#private";
 }
+export interface I extends Pick<E, Exclude<keyof E, 'a'>> {
+    version: number;
+}
