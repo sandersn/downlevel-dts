@@ -51,6 +51,19 @@ function doTransform(checker, k) {
    * @return {import("typescript").VisitResult<Node>}
    */
   const transform = function(n) {
+    if (ts.isFunctionDeclaration(n) && n.type && ts.isTypePredicateNode(n.type) && n.type.assertsModifier) {
+      return ts.createFunctionDeclaration(
+        n.decorators,
+        n.modifiers,
+        n.asteriskToken,
+        n.name,
+        n.typeParameters,
+        n.parameters,
+        ts.createTypeReferenceNode("void", undefined),
+        n.body
+      );
+    }
+
     if (ts.isGetAccessor(n)) {
       // get x(): number => x: number
       let flags = ts.getCombinedModifierFlags(n);

@@ -27,3 +27,6 @@ export class G {
 export class H extends G {
     private "H.#private";
 }
+declare function guardIsString(val: any): val is string;
+declare function assertIsString(val: any, msg?: string): void;
+declare function assert(val: any, msg?: string): void;
