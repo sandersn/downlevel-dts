@@ -70,6 +70,25 @@ the original accessors, so the downlevel d.ts will be less strict. See
 notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier)
 for more detail.
 
+### `asserts` assertion guards (3.7)
+
+Typescript 3.7 introduced the `asserts` keyword, which provides a way to indicate that a function will throw if a parameter doesn't meet a condition.
+This allows Typescript to understand that whatever condition such a function checks must be true for the remainder of the containing scope.
+
+Since there is no way to model this before 3.7, such functions are downlevelled to return `void`:
+
+```ts
+declare function assertIsString(val: any, msg?: string): asserts val is string;
+declare function assert(val: any, msg?: string): asserts val;
+```
+
+becomes
+
+```ts
+declare function assertIsString(val: any, msg?: string): void;
+declare function assert(val: any, msg?: string): void;
+```
+
 ### Type-only import/export (3.8)
 
 The downlevel emit is quite simple:
@@ -209,7 +228,7 @@ downlevelled, nor are there any other plans to support Typescript 2.x.
 
 ```json
 "typesVersions": {
-  "<=3.5": { "*": ["ts3.4/*"] }
+  "<3.8": { "*": ["ts3.4/*"] }
 }
 ```
 
