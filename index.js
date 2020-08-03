@@ -136,8 +136,11 @@ function doTransform(checker, k) {
       return ts.createExportDeclaration(n.decorators, n.modifiers, n.exportClause, n.moduleSpecifier);
     } else if (ts.isImportClause(n) && n.isTypeOnly) {
       return ts.createImportClause(n.name, n.namedBindings);
-    } else if (ts.isTypeReferenceNode(n) && ts.isIdentifier(n.typeName) && n.typeName.escapedText === "Omit") {
-      const symbol = checker.getSymbolAtLocation(n.typeName);
+    } else if (
+      (ts.isTypeReferenceNode(n) && ts.isIdentifier(n.typeName) && n.typeName.escapedText === "Omit") ||
+      (ts.isExpressionWithTypeArguments(n) && ts.isIdentifier(n.expression) && n.expression.escapedText === "Omit")
+    ) {
+      const symbol = checker.getSymbolAtLocation(ts.isTypeReferenceNode(n) ? n.typeName : n.expression);
       const typeArguments = n.typeArguments;
 
       if (
