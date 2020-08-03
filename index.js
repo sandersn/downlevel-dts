@@ -124,29 +124,10 @@ function doTransform(checker, k) {
     } else if (ts.isImportClause(n) && n.isTypeOnly) {
       return ts.createImportClause(n.name, n.namedBindings);
     } else if (
-      ts.isExpressionWithTypeArguments(n) &&
-      ts.isIdentifier(n.expression) &&
-      n.expression.escapedText === "Omit"
+      (ts.isTypeReferenceNode(n) && ts.isIdentifier(n.typeName) && n.typeName.escapedText === "Omit") ||
+      (ts.isExpressionWithTypeArguments(n) && ts.isIdentifier(n.expression) && n.expression.escapedText === "Omit")
     ) {
-      const symbol = checker.getSymbolAtLocation(n.expression);
-      const typeArguments = n.typeArguments;
-
-      if (
-        symbol &&
-        symbol.declarations.length &&
-        symbol.declarations[0].getSourceFile().fileName.includes("node_modules/typescript/lib/lib") &&
-        typeArguments
-      ) {
-        return ts.createTypeReferenceNode(ts.createIdentifier("Pick"), [
-          typeArguments[0],
-          ts.createTypeReferenceNode(ts.createIdentifier("Exclude"), [
-            ts.createTypeOperatorNode(typeArguments[0]),
-            typeArguments[1]
-          ])
-        ]);
-      }
-    } else if (ts.isTypeReferenceNode(n) && ts.isIdentifier(n.typeName) && n.typeName.escapedText === "Omit") {
-      const symbol = checker.getSymbolAtLocation(n.typeName);
+      const symbol = checker.getSymbolAtLocation(ts.isTypeReferenceNode(n) ? n.typeName : n.expression);
       const typeArguments = n.typeArguments;
 
       if (
