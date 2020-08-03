@@ -32,7 +32,9 @@ export class G {
 export class H extends G {
     #private
 }
-
 export interface I extends Omit<E, 'a'> {
     version: number;
 }
+declare function guardIsString(val: any): val is string;
+declare function assertIsString(val: any, msg?: string): asserts val is string;
+declare function assert(val: any, msg?: string): asserts val;
