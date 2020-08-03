@@ -41,6 +41,28 @@ if (!(/** @type {*} */ (module.parent))) {
   const target = process.argv[3];
   main(src, target);
 }
+/// I bet this already is built-in somewhere
+/**
+ * @param {Node} original
+ * @param {Node} rewrite
+ */
+function copyComment(original, rewrite) {
+  const text = original.getSourceFile().getFullText();
+  const ranges = ts.getLeadingCommentRanges(text, original.getFullStart());
+  if (ranges) {
+    let kind = ts.SyntaxKind.SingleLineCommentTrivia;
+    let hasTrailingNewline = false;
+    const commentText = ranges
+      .map(r => {
+        if (r.kind === ts.SyntaxKind.MultiLineCommentTrivia) kind = ts.SyntaxKind.MultiLineCommentTrivia;
+        hasTrailingNewline = hasTrailingNewline || !!r.hasTrailingNewLine;
+        return text.slice(r.pos + 3, r.end - 2);
+      })
+      .join("\n");
+    return ts.addSyntheticLeadingComment(rewrite, kind, commentText, hasTrailingNewline);
+  }
+  return rewrite;
+}
 /**
  * @param {import("typescript").TypeChecker} checker
  * @param {import("typescript").TransformationContext} k
@@ -71,13 +93,16 @@ function doTransform(checker, k) {
         flags |= ts.ModifierFlags.Readonly;
       }
       const modifiers = ts.createModifiersFromModifierFlags(flags);
-      return ts.createProperty(
-        n.decorators,
-        modifiers,
-        n.name,
-        /*?! token*/ undefined,
-        defaultAny(n.type),
-        /*initialiser*/ undefined
+      return copyComment(
+        n,
+        ts.createProperty(
+          n.decorators,
+          modifiers,
+          n.name,
+          /*?! token*/ undefined,
+          defaultAny(n.type),
+          /*initialiser*/ undefined
+        )
       );
     } else if (ts.isSetAccessor(n)) {
       // set x(value: number) => x: number
@@ -86,13 +111,16 @@ function doTransform(checker, k) {
         return undefined;
       } else {
         assert(n.parameters && n.parameters.length);
-        return ts.createProperty(
-          n.decorators,
-          n.modifiers,
-          n.name,
-          /*?! token*/ undefined,
-          defaultAny(n.parameters[0].type),
-          /*initialiser*/ undefined
+        return copyComment(
+          n,
+          ts.createProperty(
+            n.decorators,
+            n.modifiers,
+            n.name,
+            /*?! token*/ undefined,
+            defaultAny(n.parameters[0].type),
+            /*initialiser*/ undefined
+          )
         );
       }
     } else if (ts.isPropertyDeclaration(n) && ts.isPrivateIdentifier(n.name) && n.name.escapedText === "#private") {

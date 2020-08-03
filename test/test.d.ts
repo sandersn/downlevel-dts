@@ -9,7 +9,13 @@ export class C {
 // hi, this should still be there
 export namespace N {
   abstract class D {
+    /**
+     * @readonly
+     * @memberof BlobLeaseClient
+     * @type {number}
+     */
     get p(): number;
+    /** preserve this too */
     set p(value: number);
     get q();
     abstract set r(value: boolean);
@@ -24,7 +30,7 @@ export interface E {
   b: number;
 }
 
-export type F = Omit<E, 'a'>;
+export type F = Omit<E, 'a'>
 
 export class G {
     #private

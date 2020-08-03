@@ -228,10 +228,10 @@ downlevelled, nor are there any other plans to support Typescript 2.x.
 
 ```json
 "typesVersions": {
-  "<3.8": { "*": ["ts3.4/*"] }
+  "<3.9": { "*": ["ts3.4/*"] }
 }
 ```
 
-4. `$ cp tsconfig.json ts3.4/tsconfig.json`
+4. `$ cp tsconfig.json ts3.9/tsconfig.json`
 
-These instructions are modified and simplified from the Definitely Typed.
+These instructions are modified and simplified from the Definitely Typed ones.
