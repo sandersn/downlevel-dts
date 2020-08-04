@@ -202,22 +202,20 @@ function getMatchingAccessor(n, getset) {
  */
 function copyComment(originals, rewrite) {
   const file = originals[0].getSourceFile().getFullText();
-  const ranges = /** @type {ts.CommentRange[]} */ (originals
-    .flatMap(o => ts.getLeadingCommentRanges(file, o.getFullStart()))
-    .filter(x => x !== undefined));
+  const ranges = flatMap(originals, o =>
+    /** @type {ts.CommentRange[]} */ (ts.getLeadingCommentRanges(file, o.getFullStart()))
+  ).filter(x => x !== undefined);
   if (!ranges.length) return rewrite;
 
   let kind = ts.SyntaxKind.SingleLineCommentTrivia;
   let hasTrailingNewline = false;
-  const commentText = ranges
-    .flatMap(r => {
-      if (r.kind === ts.SyntaxKind.MultiLineCommentTrivia) kind = ts.SyntaxKind.MultiLineCommentTrivia;
-      hasTrailingNewline = hasTrailingNewline || !!r.hasTrailingNewLine;
-      const comment = file.slice(r.pos, r.end);
-      const text = comment.startsWith("//") ? comment.slice(2) : comment.slice(3, comment.length - 2);
-      return text.split("\n").map(line => line.trimStart());
-    })
-    .join("\n");
+  const commentText = flatMap(ranges, r => {
+    if (r.kind === ts.SyntaxKind.MultiLineCommentTrivia) kind = ts.SyntaxKind.MultiLineCommentTrivia;
+    hasTrailingNewline = hasTrailingNewline || !!r.hasTrailingNewLine;
+    const comment = file.slice(r.pos, r.end);
+    const text = comment.startsWith("//") ? comment.slice(2) : comment.slice(3, comment.length - 2);
+    return text.split("\n").map(line => line.trimStart());
+  }).join("\n");
   return ts.addSyntheticLeadingComment(rewrite, kind, commentText, hasTrailingNewline);
 }
 
@@ -239,6 +237,22 @@ function mapDefined(l, f) {
   for (const x of l) {
     const y = f(x);
     if (y) acc.push(y);
+  }
+  return acc;
+}
+
+/**
+ * @template T,U
+ * @param {readonly T[]} l
+ * @param {(t: T) => U[]} f
+ * @return {U[]}
+ */
+function flatMap(l, f) {
+  if (l.flatMap) return l.flatMap(f);
+  const acc = [];
+  for (const x of l) {
+    const ys = f(x);
+    acc.push(...ys);
   }
   return acc;
 }
