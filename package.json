@@ -1,6 +1,6 @@
 {
   "name": "downlevel-dts",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Convert d.ts to be compatible with older typescript compilers",
   "homepage": "https://github.com/sandersn/downlevel-dts",
   "main": "index.js",
