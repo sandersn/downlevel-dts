@@ -48,3 +48,5 @@ declare function guardIsString(val: any): val is string;
 /** side-effects! */
 declare function assertIsString(val: any, msg?: string): asserts val is string;
 declare function assert(val: any, msg?: string): asserts val;
+
+type J = [foo: string, bar: number, ...arr:boolean[]]

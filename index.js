@@ -168,6 +168,14 @@ function doTransform(checker, k) {
           ])
         ]);
       }
+    } else if (n.kind === ts.SyntaxKind.NamedTupleMember) {
+      const member = /** @type {import("typescript").NamedTupleMember} */ (n);
+      return ts.addSyntheticLeadingComment(
+        member.dotDotDotToken ? ts.createRestTypeNode(member.type) : member.type,
+        ts.SyntaxKind.MultiLineCommentTrivia,
+        ts.unescapeLeadingUnderscores(member.name.escapedText),
+        /*hasTrailingNewline*/ false
+      );
     }
     return ts.visitEachChild(n, transform, k);
   };

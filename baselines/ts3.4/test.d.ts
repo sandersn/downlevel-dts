@@ -43,3 +43,8 @@ declare function guardIsString(val: any): val is string;
 /** side-effects! */
 declare function assertIsString(val: any, msg?: string): void;
 declare function assert(val: any, msg?: string): void;
+type J = [
+    /*foo*/ string,
+    /*bar*/ number,
+    /*arr*/ ...boolean[]
+];
