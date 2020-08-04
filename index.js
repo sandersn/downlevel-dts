@@ -41,28 +41,7 @@ if (!(/** @type {*} */ (module.parent))) {
   const target = process.argv[3];
   main(src, target);
 }
-/// I bet this already is built-in somewhere
-/**
- * @param {Node} original
- * @param {Node} rewrite
- */
-function copyComment(original, rewrite) {
-  const text = original.getSourceFile().getFullText();
-  const ranges = ts.getLeadingCommentRanges(text, original.getFullStart());
-  if (ranges) {
-    let kind = ts.SyntaxKind.SingleLineCommentTrivia;
-    let hasTrailingNewline = false;
-    const commentText = ranges
-      .map(r => {
-        if (r.kind === ts.SyntaxKind.MultiLineCommentTrivia) kind = ts.SyntaxKind.MultiLineCommentTrivia;
-        hasTrailingNewline = hasTrailingNewline || !!r.hasTrailingNewLine;
-        return text.slice(r.pos + 3, r.end - 2);
-      })
-      .join("\n");
-    return ts.addSyntheticLeadingComment(rewrite, kind, commentText, hasTrailingNewline);
-  }
-  return rewrite;
-}
+
 /**
  * @param {import("typescript").TypeChecker} checker
  * @param {import("typescript").TransformationContext} k
@@ -89,12 +68,13 @@ function doTransform(checker, k) {
     if (ts.isGetAccessor(n)) {
       // get x(): number => x: number
       let flags = ts.getCombinedModifierFlags(n);
-      if (!getMatchingAccessor(n, "get")) {
+      const other = getMatchingAccessor(n, "get");
+      if (!other) {
         flags |= ts.ModifierFlags.Readonly;
       }
       const modifiers = ts.createModifiersFromModifierFlags(flags);
       return copyComment(
-        n,
+        other ? [n, other] : [n],
         ts.createProperty(
           n.decorators,
           modifiers,
@@ -112,7 +92,7 @@ function doTransform(checker, k) {
       } else {
         assert(n.parameters && n.parameters.length);
         return copyComment(
-          n,
+          [n],
           ts.createProperty(
             n.decorators,
             n.modifiers,
@@ -153,11 +133,14 @@ function doTransform(checker, k) {
           ts.createImportClause(/*name*/ undefined, ts.createNamespaceImport(tempName)),
           n.moduleSpecifier
         ),
-        ts.createExportDeclaration(
-          undefined,
-          undefined,
-          ts.createNamedExports([ts.createExportSpecifier(tempName, n.exportClause.name)]),
-          n.moduleSpecifier
+        copyComment(
+          [n],
+          ts.createExportDeclaration(
+            undefined,
+            undefined,
+            ts.createNamedExports([ts.createExportSpecifier(tempName, n.exportClause.name)]),
+            n.moduleSpecifier
+          )
         )
       ];
     } else if (ts.isExportDeclaration(n) && n.isTypeOnly) {
@@ -190,7 +173,6 @@ function doTransform(checker, k) {
   };
   return transform;
 }
-
 /** @param {import("typescript").TypeNode | undefined} t */
 function defaultAny(t) {
   return t || ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword);
@@ -203,7 +185,32 @@ function defaultAny(t) {
 function getMatchingAccessor(n, getset) {
   if (!ts.isClassDeclaration(n.parent)) throw new Error("Bad AST -- accessor parent should be a class declaration.");
   const isOther = getset === "get" ? ts.isSetAccessor : ts.isGetAccessor;
-  return n.parent.members.some(m => isOther(m) && m.name.getText() === n.name.getText());
+  return n.parent.members.find(m => isOther(m) && m.name.getText() === n.name.getText());
+}
+
+/**
+ * @param {Node[]} originals
+ * @param {Node} rewrite
+ */
+function copyComment(originals, rewrite) {
+  const file = originals[0].getSourceFile().getFullText();
+  const ranges = /** @type {ts.CommentRange[]} */ (originals
+    .flatMap(o => ts.getLeadingCommentRanges(file, o.getFullStart()))
+    .filter(x => x !== undefined));
+  if (!ranges.length) return rewrite;
+
+  let kind = ts.SyntaxKind.SingleLineCommentTrivia;
+  let hasTrailingNewline = false;
+  const commentText = ranges
+    .flatMap(r => {
+      if (r.kind === ts.SyntaxKind.MultiLineCommentTrivia) kind = ts.SyntaxKind.MultiLineCommentTrivia;
+      hasTrailingNewline = hasTrailingNewline || !!r.hasTrailingNewLine;
+      const comment = file.slice(r.pos, r.end);
+      const text = comment.startsWith("//") ? comment.slice(2) : comment.slice(3, comment.length - 2);
+      return text.split("\n").map(line => line.trimStart());
+    })
+    .join("\n");
+  return ts.addSyntheticLeadingComment(rewrite, kind, commentText, hasTrailingNewline);
 }
 
 /** @param {string} s */

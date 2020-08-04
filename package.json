@@ -13,7 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "shelljs": "^0.8.3",
-    "typescript": "^3.8.0-dev.20200111"
+    "typescript": "^4.1.0-dev.20200804"
   },
   "devDependencies": {
     "@types/node": "^13.1.6",
