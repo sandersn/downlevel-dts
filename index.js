@@ -202,9 +202,10 @@ function getMatchingAccessor(n, getset) {
  */
 function copyComment(originals, rewrite) {
   const file = originals[0].getSourceFile().getFullText();
-  const ranges = flatMap(originals, o =>
-    /** @type {ts.CommentRange[]} */ (ts.getLeadingCommentRanges(file, o.getFullStart()))
-  ).filter(x => x !== undefined);
+  const ranges = flatMap(originals, o => {
+    const comments = ts.getLeadingCommentRanges(file, o.getFullStart());
+    return comments ? comments : [];
+  });
   if (!ranges.length) return rewrite;
 
   let kind = ts.SyntaxKind.SingleLineCommentTrivia;
