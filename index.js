@@ -41,6 +41,7 @@ if (!(/** @type {*} */ (module.parent))) {
   const target = process.argv[3];
   main(src, target);
 }
+
 /**
  * @param {import("typescript").TypeChecker} checker
  * @param {import("typescript").TransformationContext} k
@@ -67,17 +68,21 @@ function doTransform(checker, k) {
     if (ts.isGetAccessor(n)) {
       // get x(): number => x: number
       let flags = ts.getCombinedModifierFlags(n);
-      if (!getMatchingAccessor(n, "get")) {
+      const other = getMatchingAccessor(n, "get");
+      if (!other) {
         flags |= ts.ModifierFlags.Readonly;
       }
       const modifiers = ts.createModifiersFromModifierFlags(flags);
-      return ts.createProperty(
-        n.decorators,
-        modifiers,
-        n.name,
-        /*?! token*/ undefined,
-        defaultAny(n.type),
-        /*initialiser*/ undefined
+      return copyComment(
+        other ? [n, other] : [n],
+        ts.createProperty(
+          n.decorators,
+          modifiers,
+          n.name,
+          /*?! token*/ undefined,
+          defaultAny(n.type),
+          /*initialiser*/ undefined
+        )
       );
     } else if (ts.isSetAccessor(n)) {
       // set x(value: number) => x: number
@@ -86,13 +91,16 @@ function doTransform(checker, k) {
         return undefined;
       } else {
         assert(n.parameters && n.parameters.length);
-        return ts.createProperty(
-          n.decorators,
-          n.modifiers,
-          n.name,
-          /*?! token*/ undefined,
-          defaultAny(n.parameters[0].type),
-          /*initialiser*/ undefined
+        return copyComment(
+          [n],
+          ts.createProperty(
+            n.decorators,
+            n.modifiers,
+            n.name,
+            /*?! token*/ undefined,
+            defaultAny(n.parameters[0].type),
+            /*initialiser*/ undefined
+          )
         );
       }
     } else if (ts.isPropertyDeclaration(n) && ts.isPrivateIdentifier(n.name) && n.name.escapedText === "#private") {
@@ -125,11 +133,14 @@ function doTransform(checker, k) {
           ts.createImportClause(/*name*/ undefined, ts.createNamespaceImport(tempName)),
           n.moduleSpecifier
         ),
-        ts.createExportDeclaration(
-          undefined,
-          undefined,
-          ts.createNamedExports([ts.createExportSpecifier(tempName, n.exportClause.name)]),
-          n.moduleSpecifier
+        copyComment(
+          [n],
+          ts.createExportDeclaration(
+            undefined,
+            undefined,
+            ts.createNamedExports([ts.createExportSpecifier(tempName, n.exportClause.name)]),
+            n.moduleSpecifier
+          )
         )
       ];
     } else if (ts.isExportDeclaration(n) && n.isTypeOnly) {
@@ -157,12 +168,19 @@ function doTransform(checker, k) {
           ])
         ]);
       }
+    } else if (n.kind === ts.SyntaxKind.NamedTupleMember) {
+      const member = /** @type {import("typescript").NamedTupleMember} */ (n);
+      return ts.addSyntheticLeadingComment(
+        member.dotDotDotToken ? ts.createRestTypeNode(member.type) : member.type,
+        ts.SyntaxKind.MultiLineCommentTrivia,
+        ts.unescapeLeadingUnderscores(member.name.escapedText),
+        /*hasTrailingNewline*/ false
+      );
     }
     return ts.visitEachChild(n, transform, k);
   };
   return transform;
 }
-
 /** @param {import("typescript").TypeNode | undefined} t */
 function defaultAny(t) {
   return t || ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword);
@@ -175,7 +193,31 @@ function defaultAny(t) {
 function getMatchingAccessor(n, getset) {
   if (!ts.isClassDeclaration(n.parent)) throw new Error("Bad AST -- accessor parent should be a class declaration.");
   const isOther = getset === "get" ? ts.isSetAccessor : ts.isGetAccessor;
-  return n.parent.members.some(m => isOther(m) && m.name.getText() === n.name.getText());
+  return n.parent.members.find(m => isOther(m) && m.name.getText() === n.name.getText());
+}
+
+/**
+ * @param {Node[]} originals
+ * @param {Node} rewrite
+ */
+function copyComment(originals, rewrite) {
+  const file = originals[0].getSourceFile().getFullText();
+  const ranges = flatMap(originals, o => {
+    const comments = ts.getLeadingCommentRanges(file, o.getFullStart());
+    return comments ? comments : [];
+  });
+  if (!ranges.length) return rewrite;
+
+  let kind = ts.SyntaxKind.SingleLineCommentTrivia;
+  let hasTrailingNewline = false;
+  const commentText = flatMap(ranges, r => {
+    if (r.kind === ts.SyntaxKind.MultiLineCommentTrivia) kind = ts.SyntaxKind.MultiLineCommentTrivia;
+    hasTrailingNewline = hasTrailingNewline || !!r.hasTrailingNewLine;
+    const comment = file.slice(r.pos, r.end);
+    const text = comment.startsWith("//") ? comment.slice(2) : comment.slice(3, comment.length - 2);
+    return text.split("\n").map(line => line.trimStart());
+  }).join("\n");
+  return ts.addSyntheticLeadingComment(rewrite, kind, commentText, hasTrailingNewline);
 }
 
 /** @param {string} s */
@@ -196,6 +238,22 @@ function mapDefined(l, f) {
   for (const x of l) {
     const y = f(x);
     if (y) acc.push(y);
+  }
+  return acc;
+}
+
+/**
+ * @template T,U
+ * @param {readonly T[]} l
+ * @param {(t: T) => U[]} f
+ * @return {U[]}
+ */
+function flatMap(l, f) {
+  if (l.flatMap) return l.flatMap(f);
+  const acc = [];
+  for (const x of l) {
+    const ys = f(x);
+    acc.push(...ys);
   }
   return acc;
 }

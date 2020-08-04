@@ -18,6 +18,13 @@ declare class C {
 }
 ```
 
+Note that not all features can be downlevelled. For example,
+Typescript 4.0 allows spreading multiple tuple type variables, at any
+position in a tuple. This is not allowed in previous versions, but has
+no obvious downlevel emit, so downlevel-dts doesn't attempt to do
+anything. Be sure to test the output of downlevel-dts with the
+appropriate version of Typescript.
+
 ## Features
 
 Here is the list of features that are downlevelled:
@@ -209,6 +216,25 @@ export { ns_1 as ns };
 
 The downlevel semantics should be exactly the same as the original.
 
+### `[named: number, tuple: string, ...members: boolean[]]` (4.0)
+
+Typescript 4.0 supports naming tuple members:
+
+```ts
+type T = [foo: number, bar: string];
+```
+
+becomes
+
+```ts
+type T = [/** foo */ number, /** bar */ string];
+```
+
+#### Semantics
+
+The downlevel semantics are exactly the same as the original, but
+the Typescript language service won't be able to show the member names.
+
 ## Target
 
 Since the earliest downlevel feature is from Typescript 3.5,
@@ -228,10 +254,10 @@ downlevelled, nor are there any other plans to support Typescript 2.x.
 
 ```json
 "typesVersions": {
-  "<3.8": { "*": ["ts3.4/*"] }
+  "<3.9": { "*": ["ts3.4/*"] }
 }
 ```
 
-4. `$ cp tsconfig.json ts3.4/tsconfig.json`
+4. `$ cp tsconfig.json ts3.9/tsconfig.json`
 
-These instructions are modified and simplified from the Definitely Typed.
+These instructions are modified and simplified from the Definitely Typed ones.
