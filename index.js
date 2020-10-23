@@ -138,8 +138,7 @@ function doTransform(checker, k) {
           ts.createExportDeclaration(
             undefined,
             undefined,
-            ts.createNamedExports([ts.createExportSpecifier(tempName, n.exportClause.name)]),
-            n.moduleSpecifier
+            ts.createNamedExports([ts.createExportSpecifier(tempName, n.exportClause.name)])
           )
         )
       ];

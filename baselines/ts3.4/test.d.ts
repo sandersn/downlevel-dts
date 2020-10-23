@@ -23,7 +23,7 @@ export namespace N {
 import { C as CD } from "./src/test";
 import * as rex_1 from "./src/test";
 //another comment
-export { rex_1 as rex } from "./src/test";
+export { rex_1 as rex };
 export interface E {
     a: number;
     b: number;
