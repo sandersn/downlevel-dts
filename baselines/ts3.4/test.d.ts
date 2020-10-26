@@ -48,3 +48,5 @@ type J = [
     /*bar*/ number,
     /*arr*/ ...boolean[]
 ];
+import * as default_1 from "./src/test";
+export { default_1 as default };

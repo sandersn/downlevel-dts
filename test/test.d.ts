@@ -1,5 +1,6 @@
-/// <reference types="node" />
 /// <reference path="./src/test.d.ts" />
+/// <reference types="node" />
+
 export class C {
   protected get p(): number;
   protected set p(value: number);
@@ -50,3 +51,5 @@ declare function assertIsString(val: any, msg?: string): asserts val is string;
 declare function assert(val: any, msg?: string): asserts val;
 
 type J = [foo: string, bar: number, ...arr:boolean[]]
+
+export * as default from "./src/test";
