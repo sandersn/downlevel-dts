@@ -238,8 +238,8 @@ the Typescript language service won't be able to show the member names.
 ## Target
 
 Since the earliest downlevel feature is from Typescript 3.5,
-downlevel-dts targets Typescript 3.4. In the future the downlevel
-target may be configurable as Typescript 3.4 becomes less used.
+downlevel-dts targets Typescript 3.4 by default. The downlevel target is
+configurable with `--to` argument.
 
 Currently, Typescript 3.0 features like `unknown` are not
 downlevelled, nor are there any other plans to support Typescript 2.x.
@@ -249,7 +249,7 @@ downlevelled, nor are there any other plans to support Typescript 2.x.
 ## Usage
 
 1. `$ npm install downlevel-dts`
-2. `$ npx downlevel-dts . ts3.4`
+2. `$ npx downlevel-dts . ts3.4 [--to=3.4]`
 3. To your package.json, add
 
 ```json

@@ -1,29 +1,33 @@
 const { main } = require("./index");
 const sh = require("shelljs");
 const fs = require("fs");
-const path = require("path");
-/**
- * @param {string} description
- * @param {{ [s: string]: () => void }} tests
- */
-function suite(description, tests) {
-  describe(description, () => {
-    for (const k in tests) {
-      test(k, tests[k], 10 * 1000);
+const semver = require("semver");
+
+describe("main", () => {
+  const tsVersions = ["3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "4.0"];
+
+  afterEach(() => {
+    for (const tsVersion of tsVersions) {
+      if (fs.existsSync(`test/ts${tsVersion}`)) {
+        sh.rm("-r", `test/ts${tsVersion}`);
+      }
     }
   });
-}
-suite("main", {
-  works() {
-    if (fs.existsSync("test/ts3.4")) {
-      sh.rm("-r", "test/ts3.4");
-    }
-    main("test", "test/ts3.4");
-    expect(fs.readFileSync("test/ts3.4/test.d.ts", "utf8")).toEqual(
-      fs.readFileSync("baselines/ts3.4/test.d.ts", "utf8")
-    );
-    expect(fs.readFileSync("test/ts3.4/src/test.d.ts", "utf8")).toEqual(
-      fs.readFileSync("baselines/ts3.4/src/test.d.ts", "utf8")
+
+  for (const tsVersion of tsVersions) {
+    test(
+      "downlevel TS to " + tsVersion,
+      () => {
+        main("test", `test/ts${tsVersion}`, semver.coerce(tsVersion));
+
+        expect(fs.readFileSync(`test/ts${tsVersion}/test.d.ts`, "utf8")).toEqual(
+          fs.readFileSync(`baselines/ts${tsVersion}/test.d.ts`, "utf8")
+        );
+        expect(fs.readFileSync(`test/ts${tsVersion}/src/test.d.ts`, "utf8")).toEqual(
+          fs.readFileSync(`baselines/ts${tsVersion}/src/test.d.ts`, "utf8")
+        );
+      },
+      10 * 1000
     );
   }
 });
