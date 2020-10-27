@@ -4,15 +4,17 @@ const fs = require("fs");
 const ts = require("typescript");
 const path = require("path");
 const assert = require("assert");
+const semver = require("semver");
 
 /** @typedef {import("typescript").Node} Node */
 /**
  * @param {string} src
  * @param {string} target
+ * @param {import("semver").SemVer} targetVersion
  */
-function main(src, target) {
+function main(src, target, targetVersion) {
   if (!src || !target) {
-    console.log("Usage: node index.js test test/ts3.4");
+    console.log("Usage: node index.js test test/ts3.4 [--to=3.4]");
     process.exit(1);
   }
 
@@ -27,7 +29,7 @@ function main(src, target) {
   const printer = ts.createPrinter({
     newLine: ts.NewLineKind.CarriageReturnLineFeed
   });
-  for (const t of ts.transform(files, [doTransform.bind(null, checker)]).transformed) {
+  for (const t of ts.transform(files, [doTransform.bind(null, checker, targetVersion)]).transformed) {
     const f = /** @type {import("typescript").SourceFile} */ (t);
     const targetPath = path.join(target, path.resolve(f.fileName).slice(path.resolve(src).length));
     sh.mkdir("-p", path.dirname(targetPath));
@@ -39,20 +41,33 @@ module.exports.main = main;
 if (!(/** @type {*} */ (module.parent))) {
   const src = process.argv[2];
   const target = process.argv[3];
-  main(src, target);
+  const to = process.argv.find(arg => arg.startsWith("--to"));
+  /** @type {*} */ let targetVersion = semver.minVersion("3.4.0");
+  if (to) {
+    const userInput = semver.coerce(to.split("=")[1]);
+    if (userInput) targetVersion = userInput;
+  }
+  main(src, target, targetVersion);
 }
 
 /**
  * @param {import("typescript").TypeChecker} checker
+ * @param {import("semver").SemVer} targetVersion
  * @param {import("typescript").TransformationContext} k
  */
-function doTransform(checker, k) {
+function doTransform(checker, targetVersion, k) {
   /**
    * @param {Node} n
    * @return {import("typescript").VisitResult<Node>}
    */
   const transform = function(n) {
-    if (ts.isFunctionDeclaration(n) && n.type && ts.isTypePredicateNode(n.type) && n.type.assertsModifier) {
+    if (
+      semver.lt(targetVersion, "3.7.0") &&
+      ts.isFunctionDeclaration(n) &&
+      n.type &&
+      ts.isTypePredicateNode(n.type) &&
+      n.type.assertsModifier
+    ) {
       return ts.createFunctionDeclaration(
         n.decorators,
         n.modifiers,
@@ -65,7 +80,7 @@ function doTransform(checker, k) {
       );
     }
 
-    if (ts.isGetAccessor(n)) {
+    if (semver.lt(targetVersion, "3.6.0") && ts.isGetAccessor(n)) {
       // get x(): number => x: number
       let flags = ts.getCombinedModifierFlags(n);
       const other = getMatchingAccessor(n, "get");
@@ -84,7 +99,7 @@ function doTransform(checker, k) {
           /*initialiser*/ undefined
         )
       );
-    } else if (ts.isSetAccessor(n)) {
+    } else if (semver.lt(targetVersion, "3.6.0") && ts.isSetAccessor(n)) {
       // set x(value: number) => x: number
       let flags = ts.getCombinedModifierFlags(n);
       if (getMatchingAccessor(n, "set")) {
@@ -103,7 +118,12 @@ function doTransform(checker, k) {
           )
         );
       }
-    } else if (ts.isPropertyDeclaration(n) && ts.isPrivateIdentifier(n.name) && n.name.escapedText === "#private") {
+    } else if (
+      semver.lt(targetVersion, "3.8.0") &&
+      ts.isPropertyDeclaration(n) &&
+      ts.isPrivateIdentifier(n.name) &&
+      n.name.escapedText === "#private"
+    ) {
       // #private => private "#private"
       const modifiers = ts.createModifiersFromModifierFlags(ts.ModifierFlags.Private);
       const parentName = n.parent.name ? n.parent.name.escapedText : "(anonymous)";
@@ -116,6 +136,7 @@ function doTransform(checker, k) {
         /*initialiser*/ undefined
       );
     } else if (
+      semver.lt(targetVersion, "3.8.0") &&
       ts.isExportDeclaration(n) &&
       n.exportClause &&
       n.moduleSpecifier &&
@@ -142,9 +163,9 @@ function doTransform(checker, k) {
           )
         )
       ];
-    } else if (ts.isExportDeclaration(n) && n.isTypeOnly) {
+    } else if (semver.lt(targetVersion, "3.8.0") && ts.isExportDeclaration(n) && n.isTypeOnly) {
       return ts.createExportDeclaration(n.decorators, n.modifiers, n.exportClause, n.moduleSpecifier);
-    } else if (ts.isImportClause(n) && n.isTypeOnly) {
+    } else if (semver.lt(targetVersion, "3.8.0") && ts.isImportClause(n) && n.isTypeOnly) {
       return ts.createImportClause(n.name, n.namedBindings);
     } else if (
       (ts.isTypeReferenceNode(n) && ts.isIdentifier(n.typeName) && n.typeName.escapedText === "Omit") ||
@@ -154,6 +175,7 @@ function doTransform(checker, k) {
       const typeArguments = n.typeArguments;
 
       if (
+        semver.lt(targetVersion, "3.5.0") &&
         symbol &&
         symbol.declarations.length &&
         symbol.declarations[0].getSourceFile().fileName.includes("node_modules/typescript/lib/lib") &&
@@ -167,7 +189,7 @@ function doTransform(checker, k) {
           ])
         ]);
       }
-    } else if (n.kind === ts.SyntaxKind.NamedTupleMember) {
+    } else if (semver.lt(targetVersion, "4.0.0") && n.kind === ts.SyntaxKind.NamedTupleMember) {
       const member = /** @type {import("typescript").NamedTupleMember} */ (n);
       return ts.addSyntheticLeadingComment(
         member.dotDotDotToken ? ts.createRestTypeNode(member.type) : member.type,
