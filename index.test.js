@@ -6,25 +6,21 @@ const semver = require("semver");
 describe("main", () => {
   const tsVersions = ["3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "4.0"];
 
-  afterEach(() => {
-    for (const tsVersion of tsVersions) {
-      if (fs.existsSync(`test/ts${tsVersion}`)) {
-        sh.rm("-r", `test/ts${tsVersion}`);
-      }
-    }
-  });
+  if (fs.existsSync(`baselines/local`)) {
+    sh.rm("-r", `baselines/local`);
+  }
 
   for (const tsVersion of tsVersions) {
     test(
       "downlevel TS to " + tsVersion,
       () => {
-        main("test", `test/ts${tsVersion}`, semver.coerce(tsVersion));
+        main("test", `baselines/local/ts${tsVersion}`, semver.coerce(tsVersion));
 
-        expect(fs.readFileSync(`test/ts${tsVersion}/test.d.ts`, "utf8")).toEqual(
-          fs.readFileSync(`baselines/ts${tsVersion}/test.d.ts`, "utf8")
+        expect(fs.readFileSync(`baselines/local/ts${tsVersion}/test.d.ts`, "utf8")).toEqual(
+          fs.readFileSync(`baselines/reference/ts${tsVersion}/test.d.ts`, "utf8")
         );
-        expect(fs.readFileSync(`test/ts${tsVersion}/src/test.d.ts`, "utf8")).toEqual(
-          fs.readFileSync(`baselines/ts${tsVersion}/src/test.d.ts`, "utf8")
+        expect(fs.readFileSync(`baselines/local/ts${tsVersion}/src/test.d.ts`, "utf8")).toEqual(
+          fs.readFileSync(`baselines/reference/ts${tsVersion}/src/test.d.ts`, "utf8")
         );
       },
       10 * 1000

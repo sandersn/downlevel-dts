@@ -7,7 +7,7 @@
   "bin": "index.js",
   "scripts": {
     "test": "jest",
-    "baseline-accept": "cp -r test/ts3.4 baselines"
+    "baseline-accept": "cp -r baselines/local/ts* baselines/reference"
   },
   "author": "Nathan Shively-Sanders",
   "license": "MIT",

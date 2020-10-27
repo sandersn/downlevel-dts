@@ -22,10 +22,9 @@ export namespace N {
     }
 }
 /** is this a single-line comment? */
-import { C as CD } from "./src/test";
-import * as rex_1 from "./src/test";
-//another comment
-export { rex_1 as rex } from "./src/test";
+import type { C as CD } from "./src/test";
+// another comment
+export * as rex from "./src/test";
 export interface E {
     a: number;
     b: number;
@@ -33,20 +32,21 @@ export interface E {
 /// is this a single-line comment?
 export type F = Omit<E, 'a'>;
 export class G {
-    private "G.#private";
+    #private;
 }
 export class H extends G {
-    private "H.#private";
+    #private;
 }
 export interface I extends Omit<E, 'a'> {
     version: number;
 }
 declare function guardIsString(val: any): val is string;
 /** side-effects! */
-declare function assertIsString(val: any, msg?: string): void;
-declare function assert(val: any, msg?: string): void;
+declare function assertIsString(val: any, msg?: string): asserts val is string;
+declare function assert(val: any, msg?: string): asserts val;
 type J = [
-    /*foo*/ string,
-    /*bar*/ number,
-    /*arr*/ ...boolean[]
+    foo: string,
+    bar: number,
+    ...arr: boolean[]
 ];
+export * as default from "./src/test";

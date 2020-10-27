@@ -49,3 +49,4 @@ type J = [
     /*bar*/ number,
     /*arr*/ ...boolean[]
 ];
+export * as default from "./src/test";

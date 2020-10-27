@@ -1,29 +1,31 @@
 /// <reference path="./src/test.d.ts" />
 /// <reference types="node" />
 export class C {
-    protected p: number;
-    public readonly q: string;
-    private r: boolean;
+    protected get p(): number;
+    protected set p(value: number);
+    public get q(): string;
+    private set r(value: boolean);
 }
 // hi, this should still be there
 export namespace N {
     abstract class D {
-        /*
-        * @readonly
-        * @memberof BlobLeaseClient
-        * @type {number}
-        
-        preserve this too */
-        p: number;
-        readonly q: any;
-        abstract r: boolean;
+        /**
+         * @readonly
+         * @memberof BlobLeaseClient
+         * @type {number}
+         */
+        get p(): number;
+        /** preserve this too */
+        set p(value: number);
+        get q();
+        abstract set r(value: boolean);
     }
 }
 /** is this a single-line comment? */
 import { C as CD } from "./src/test";
 import * as rex_1 from "./src/test";
 //another comment
-export { rex_1 as rex } from "./src/test";
+export { rex_1 as rex };
 export interface E {
     a: number;
     b: number;
@@ -48,3 +50,5 @@ type J = [
     /*bar*/ number,
     /*arr*/ ...boolean[]
 ];
+import * as default_1 from "./src/test";
+export { default_1 as default };
