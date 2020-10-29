@@ -23,3 +23,6 @@ export interface E {
 }
 
 export type F = Omit<E, 'a'>;
+
+export declare let readonlyArr: readonly string[];
+export declare let readonlyTuple: readonly [string, number];

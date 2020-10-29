@@ -17,8 +17,8 @@ export interface E {
     b: number;
 }
 export type F = Omit<E, 'a'>;
-export declare let readonlyArr: readonly string[];
-export declare let readonlyTuple: readonly [
+export declare let readonlyArr: ReadonlyArray<string>;
+export declare let readonlyTuple: Readonly<[
     string,
     number
-];
+]>;

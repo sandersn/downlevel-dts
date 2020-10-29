@@ -29,6 +29,20 @@ appropriate version of Typescript.
 
 Here is the list of features that are downlevelled:
 
+### ReadonlyArray and readonly tuples (3.4)
+
+```ts
+export declare let readonlyArr: readonly string[];
+export declare let readonlyTuple: readonly [string, number];
+```
+
+becomes
+
+```ts
+export declare let readonlyArr: ReadonlyArray<string>;
+export declare let readonlyTuple: Readonly<[string, number]>;
+```
+
 ### `Omit` (3.5)
 
 ```ts

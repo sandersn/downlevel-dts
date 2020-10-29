@@ -4,7 +4,7 @@ const fs = require("fs");
 const semver = require("semver");
 
 describe("main", () => {
-  const tsVersions = ["3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "4.0"];
+  const tsVersions = ["3.3", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "4.0"];
 
   if (fs.existsSync(`baselines/local`)) {
     sh.rm("-r", `baselines/local`);

@@ -197,6 +197,22 @@ function doTransform(checker, targetVersion, k) {
         ts.unescapeLeadingUnderscores(member.name.escapedText),
         /*hasTrailingNewline*/ false
       );
+    } else if (
+      semver.lt(targetVersion, "3.4.0") &&
+      ts.isTypeOperatorNode(n) &&
+      n.operator === ts.SyntaxKind.ReadonlyKeyword
+    ) {
+      if (ts.isArrayTypeNode(n.type)) {
+        // let arr: readonly number[];
+        // =>
+        // let arr: ReadonlyArray<number>;
+        return ts.createTypeReferenceNode("ReadonlyArray", [transform(n.type.elementType)]);
+      } else if (ts.isTupleTypeNode(n.type)) {
+        // let tup: readonly [string, number];
+        // =>
+        // let tup: Readonly<[string, number]>;
+        return ts.createTypeReferenceNode("Readonly", [transform(n.type)]);
+      }
     }
     return ts.visitEachChild(n, transform, k);
   };
