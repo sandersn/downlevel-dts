@@ -14,7 +14,7 @@ describe("main", () => {
     test(
       "downlevel TS to " + tsVersion,
       () => {
-        main("test", `baselines/local/ts${tsVersion}`, semver.coerce(tsVersion));
+        main("test", `baselines/local/ts${tsVersion}`, { targetVersion: semver.coerce(tsVersion), sourceMap: false });
 
         expect(fs.readFileSync(`baselines/local/ts${tsVersion}/test.d.ts`, "utf8")).toEqual(
           fs.readFileSync(`baselines/reference/ts${tsVersion}/test.d.ts`, "utf8")
