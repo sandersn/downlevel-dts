@@ -53,3 +53,11 @@ declare function assert(val: any, msg?: string): asserts val;
 type J = [foo: string, bar: number, ...arr:boolean[]]
 
 export * as default from "./src/test";
+
+export declare type Asserts<T> = (val: unknown) => asserts val is T;
+
+export declare const foo: {
+    bar: {
+        baz: <T>(val: unknown) => asserts val is T;
+    };
+};

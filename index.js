@@ -61,23 +61,23 @@ function doTransform(checker, targetVersion, k) {
    * @return {import("typescript").VisitResult<Node>}
    */
   const transform = function(n) {
-    if (
-      semver.lt(targetVersion, "3.7.0") &&
-      ts.isFunctionDeclaration(n) &&
-      n.type &&
-      ts.isTypePredicateNode(n.type) &&
-      n.type.assertsModifier
-    ) {
-      return ts.createFunctionDeclaration(
-        n.decorators,
-        n.modifiers,
-        n.asteriskToken,
-        n.name,
-        n.typeParameters,
-        n.parameters,
-        ts.createTypeReferenceNode("void", undefined),
-        n.body
-      );
+    if (semver.lt(targetVersion, "3.7.0")) {
+      if (ts.isFunctionTypeNode(n) && n.type && ts.isTypePredicateNode(n.type) && n.type.assertsModifier) {
+        return ts.createFunctionTypeNode(n.typeParameters, n.parameters, ts.createTypeReferenceNode("void", undefined));
+      }
+
+      if (ts.isFunctionDeclaration(n) && n.type && ts.isTypePredicateNode(n.type) && n.type.assertsModifier) {
+        return ts.createFunctionDeclaration(
+          n.decorators,
+          n.modifiers,
+          n.asteriskToken,
+          n.name,
+          n.typeParameters,
+          n.parameters,
+          ts.createTypeReferenceNode("void", undefined),
+          n.body
+        );
+      }
     }
 
     if (semver.lt(targetVersion, "3.6.0") && ts.isGetAccessor(n)) {
