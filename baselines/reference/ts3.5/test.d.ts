@@ -50,3 +50,9 @@ type J = [
 ];
 import * as default_1 from "./src/test";
 export { default_1 as default };
+export declare type Asserts<T> = (val: unknown) => void;
+export declare const foo: {
+    bar: {
+        baz: <T>(val: unknown) => void;
+    };
+};
