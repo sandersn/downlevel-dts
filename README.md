@@ -254,7 +254,7 @@ downlevelled, nor are there any other plans to support Typescript 2.x.
 
 ```json
 "typesVersions": {
-  "<=3.9": { "*": ["ts3.4/*"] }
+  "<4.0": { "*": ["ts3.4/*"] }
 }
 ```
 
