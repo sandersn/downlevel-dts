@@ -9,6 +9,10 @@
     "test": "jest",
     "baseline-accept": "cp -r baselines/local/ts* baselines/reference"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sandersn/downlevel-dts.git"
+  },
   "author": "Nathan Shively-Sanders",
   "license": "MIT",
   "dependencies": {
