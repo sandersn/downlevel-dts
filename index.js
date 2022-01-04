@@ -119,6 +119,24 @@ function doTransform(checker, targetVersion, k) {
         );
       }
     } else if (
+      semver.lt(targetVersion, "3.6.0") &&
+      ((ts.isTypeReferenceNode(n) && ts.isIdentifier(n.typeName) && n.typeName.escapedText === "IteratorResult") ||
+        (ts.isExpressionWithTypeArguments(n) &&
+          ts.isIdentifier(n.expression) &&
+          n.expression.escapedText === "IteratorResult"))
+    ) {
+      const symbol = checker.getSymbolAtLocation(ts.isTypeReferenceNode(n) ? n.typeName : n.expression);
+      const typeArguments = n.typeArguments;
+      if (
+        semver.lt(targetVersion, "3.6.0") &&
+        symbol &&
+        symbol.declarations.length &&
+        symbol.declarations[0].getSourceFile().fileName.includes("node_modules/typescript/lib/lib") &&
+        typeArguments
+      ) {
+        return ts.createTypeReferenceNode(ts.createIdentifier("IteratorResult"), [typeArguments[0]]);
+      }
+    } else if (
       semver.lt(targetVersion, "3.8.0") &&
       ts.isPropertyDeclaration(n) &&
       ts.isPrivateIdentifier(n.name) &&
