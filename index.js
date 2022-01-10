@@ -121,12 +121,7 @@ function doTransform(checker, targetVersion, k) {
     } else if (semver.lt(targetVersion, "3.6.0") && isTypeReference(n, "IteratorResult")) {
       const symbol = checker.getSymbolAtLocation(ts.isTypeReferenceNode(n) ? n.typeName : n.expression);
       const typeArguments = n.typeArguments;
-      if (
-        symbol &&
-        symbol.declarations.length &&
-        symbol.declarations[0].getSourceFile().fileName.includes("node_modules/typescript/lib/lib") &&
-        typeArguments
-      ) {
+      if (isStdLibSymbol(symbol) && typeArguments) {
         return ts.createTypeReferenceNode(ts.createIdentifier("IteratorResult"), [typeArguments[0]]);
       }
     } else if (
@@ -182,13 +177,7 @@ function doTransform(checker, targetVersion, k) {
       const symbol = checker.getSymbolAtLocation(ts.isTypeReferenceNode(n) ? n.typeName : n.expression);
       const typeArguments = n.typeArguments;
 
-      if (
-        semver.lt(targetVersion, "3.5.0") &&
-        symbol &&
-        symbol.declarations.length &&
-        symbol.declarations[0].getSourceFile().fileName.includes("node_modules/typescript/lib/lib") &&
-        typeArguments
-      ) {
+      if (semver.lt(targetVersion, "3.5.0") && isStdLibSymbol(symbol) && typeArguments) {
         return ts.createTypeReferenceNode(ts.createIdentifier("Pick"), [
           typeArguments[0],
           ts.createTypeReferenceNode(ts.createIdentifier("Exclude"), [
@@ -299,5 +288,18 @@ function isTypeReference(node, typeName) {
     (ts.isExpressionWithTypeArguments(node) &&
       ts.isIdentifier(node.expression) &&
       node.expression.escapedText === typeName)
+  );
+}
+
+/**
+ * Returns whether a symbol is a standard TypeScript library definition
+ * @param {ts.Symbol | undefined} symbol a symbol in source file
+ * @returns whether this symbol is for a standard TypeScript library definition
+ */
+function isStdLibSymbol(symbol) {
+  return (
+    symbol &&
+    symbol.declarations.length &&
+    symbol.declarations[0].getSourceFile().fileName.includes("node_modules/typescript/lib/lib")
   );
 }
