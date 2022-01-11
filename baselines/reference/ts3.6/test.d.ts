@@ -58,3 +58,4 @@ export declare const foo: {
         baz: <T>(val: unknown) => void;
     };
 };
+export type IR = IteratorResult<number, string>;

@@ -118,6 +118,12 @@ function doTransform(checker, targetVersion, k) {
           )
         );
       }
+    } else if (semver.lt(targetVersion, "3.6.0") && isTypeReference(n, "IteratorResult")) {
+      const symbol = checker.getSymbolAtLocation(ts.isTypeReferenceNode(n) ? n.typeName : n.expression);
+      const typeArguments = n.typeArguments;
+      if (isStdLibSymbol(symbol) && typeArguments) {
+        return ts.createTypeReferenceNode(ts.createIdentifier("IteratorResult"), [typeArguments[0]]);
+      }
     } else if (
       semver.lt(targetVersion, "3.8.0") &&
       ts.isPropertyDeclaration(n) &&
@@ -167,20 +173,11 @@ function doTransform(checker, targetVersion, k) {
       return ts.createExportDeclaration(n.decorators, n.modifiers, n.exportClause, n.moduleSpecifier);
     } else if (semver.lt(targetVersion, "3.8.0") && ts.isImportClause(n) && n.isTypeOnly) {
       return ts.createImportClause(n.name, n.namedBindings);
-    } else if (
-      (ts.isTypeReferenceNode(n) && ts.isIdentifier(n.typeName) && n.typeName.escapedText === "Omit") ||
-      (ts.isExpressionWithTypeArguments(n) && ts.isIdentifier(n.expression) && n.expression.escapedText === "Omit")
-    ) {
+    } else if (isTypeReference(n, "Omit")) {
       const symbol = checker.getSymbolAtLocation(ts.isTypeReferenceNode(n) ? n.typeName : n.expression);
       const typeArguments = n.typeArguments;
 
-      if (
-        semver.lt(targetVersion, "3.5.0") &&
-        symbol &&
-        symbol.declarations.length &&
-        symbol.declarations[0].getSourceFile().fileName.includes("node_modules/typescript/lib/lib") &&
-        typeArguments
-      ) {
+      if (semver.lt(targetVersion, "3.5.0") && isStdLibSymbol(symbol) && typeArguments) {
         return ts.createTypeReferenceNode(ts.createIdentifier("Pick"), [
           typeArguments[0],
           ts.createTypeReferenceNode(ts.createIdentifier("Exclude"), [
@@ -277,4 +274,32 @@ function flatMap(l, f) {
     acc.push(...ys);
   }
   return acc;
+}
+
+/**
+ * Checks whether a node is a type reference with typeName as a name
+ * @param {ts.Node} node AST node
+ * @param {string} typeName name of the type
+ * @returns true if the node is a type reference with typeName as a name
+ */
+function isTypeReference(node, typeName) {
+  return (
+    (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName) && node.typeName.escapedText === typeName) ||
+    (ts.isExpressionWithTypeArguments(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.escapedText === typeName)
+  );
+}
+
+/**
+ * Returns whether a symbol is a standard TypeScript library definition
+ * @param {ts.Symbol | undefined} symbol a symbol in source file
+ * @returns whether this symbol is for a standard TypeScript library definition
+ */
+function isStdLibSymbol(symbol) {
+  return (
+    symbol &&
+    symbol.declarations.length &&
+    symbol.declarations[0].getSourceFile().fileName.includes("node_modules/typescript/lib/lib")
+  );
 }

@@ -56,3 +56,4 @@ export declare const foo: {
         baz: <T>(val: unknown) => asserts val is T;
     };
 };
+export type IR = IteratorResult<number, string>;
