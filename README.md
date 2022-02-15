@@ -1,8 +1,8 @@
-downlevel-dts rewrites .d.ts files created by any version of Typescript so
-that they work with Typescript 3.4 or later. It does this by
+downlevel-dts rewrites .d.ts files created by any version of TypeScript so
+that they work with TypeScript 3.4 or later. It does this by
 converting code with new features into code that uses equivalent old
 features. For example, it rewrites accessors to properties, because
-Typescript didn't support accessors in .d.ts files until 3.6:
+TypeScript didn't support accessors in .d.ts files until 3.6:
 
 ```ts
 declare class C {
@@ -19,11 +19,11 @@ declare class C {
 ```
 
 Note that not all features can be downlevelled. For example,
-Typescript 4.0 allows spreading multiple tuple type variables, at any
+TypeScript 4.0 allows spreading multiple tuple type variables, at any
 position in a tuple. This is not allowed in previous versions, but has
 no obvious downlevel emit, so downlevel-dts doesn't attempt to do
 anything. Be sure to test the output of downlevel-dts with the
-appropriate version of Typescript.
+appropriate version of TypeScript.
 
 ## Features
 
@@ -41,8 +41,8 @@ becomes
 type Less = Pick<T, Exclude<keyof T, K>>;
 ```
 
-`Omit` has had non-builtin implementations since Typescript 2.2, but
-became built-in in Typescript 3.5.
+`Omit` has had non-builtin implementations since TypeScript 2.2, but
+became built-in in TypeScript 3.5.
 
 #### Semantics
 
@@ -50,8 +50,8 @@ became built-in in Typescript 3.5.
 
 ### Accessors (3.6)
 
-Typescript prevented accessors from being in .d.ts files until
-Typescript 3.6 because they behave very similarly to properties.
+TypeScript prevented accessors from being in .d.ts files until
+TypeScript 3.6 because they behave very similarly to properties.
 However, they behave differently with inheritance, so the distinction
 can be useful.
 
@@ -73,14 +73,14 @@ declare class C {
 
 The properties emitted downlevel can be overridden in more cases than
 the original accessors, so the downlevel d.ts will be less strict. See
-[the Typescript 3.7 release
+[the TypeScript 3.7 release
 notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier)
 for more detail.
 
 ### `asserts` assertion guards (3.7)
 
-Typescript 3.7 introduced the `asserts` keyword, which provides a way to indicate that a function will throw if a parameter doesn't meet a condition.
-This allows Typescript to understand that whatever condition such a function checks must be true for the remainder of the containing scope.
+TypeScript 3.7 introduced the `asserts` keyword, which provides a way to indicate that a function will throw if a parameter doesn't meet a condition.
+This allows TypeScript to understand that whatever condition such a function checks must be true for the remainder of the containing scope.
 
 Since there is no way to model this before 3.7, such functions are downlevelled to return `void`:
 
@@ -137,7 +137,7 @@ var c = new C();
 
 ### `#private` (3.8)
 
-Typescript 3.8 supports the new ECMAScript-standard #private properties in
+TypeScript 3.8 supports the new ECMAScript-standard #private properties in
 addition to its compile-time-only private properties. Since neither
 are accessible at compile-time, downlevel-dts converts #private
 properties to compile-time private properties:
@@ -198,7 +198,7 @@ d.ts **also** shouldn't do this.
 
 ### `export * from 'x'` (3.8)
 
-Typescript 3.8 supports the new ECMAScript-standard `export * as namespace` syntax, which is just syntactic sugar for two import/export
+TypeScript 3.8 supports the new ECMAScript-standard `export * as namespace` syntax, which is just syntactic sugar for two import/export
 statements:
 
 ```ts
@@ -218,7 +218,7 @@ The downlevel semantics should be exactly the same as the original.
 
 ### `[named: number, tuple: string, ...members: boolean[]]` (4.0)
 
-Typescript 4.0 supports naming tuple members:
+TypeScript 4.0 supports naming tuple members:
 
 ```ts
 type T = [foo: number, bar: string];
@@ -233,16 +233,16 @@ type T = [/** foo */ number, /** bar */ string];
 #### Semantics
 
 The downlevel semantics are exactly the same as the original, but
-the Typescript language service won't be able to show the member names.
+the TypeScript language service won't be able to show the member names.
 
 ## Target
 
-Since the earliest downlevel feature is from Typescript 3.5,
-downlevel-dts targets Typescript 3.4 by default. The downlevel target is
+Since the earliest downlevel feature is from TypeScript 3.5,
+downlevel-dts targets TypeScript 3.4 by default. The downlevel target is
 configurable with `--to` argument.
 
-Currently, Typescript 3.0 features like `unknown` are not
-downlevelled, nor are there any other plans to support Typescript 2.x.
+Currently, TypeScript 3.0 features like `unknown` are not
+downlevelled, nor are there any other plans to support TypeScript 2.x.
 
 ### Downlevel semantics
 
