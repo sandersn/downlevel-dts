@@ -21,6 +21,10 @@ export namespace N {
 }
 /** is this a single-line comment? */
 import { C as CD } from "./src/test";
+/*preserve it */
+import { C as CD2, C as CD3 } from "./src/test";
+/*this too */
+import { C as CD4, C as CD5 } from "./src/test";
 import * as rex_1 from "./src/test";
 //another comment
 export { rex_1 as rex };

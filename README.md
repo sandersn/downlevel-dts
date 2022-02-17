@@ -135,6 +135,56 @@ import { C } from "x";
 var c = new C();
 ```
 
+### `type` modifiers on import names (4.5)
+
+The downlevel emit depends on the TypeScript target version and whether type and
+value imports are mixed.
+
+An import declaration with only import names that have `type` modifiers
+
+```ts
+import { type A, type B } from "x";
+```
+
+becomes:
+
+```ts
+// TS 3.8+
+import type { A, B } from "x";
+
+// TS 3.7 or less
+import { A, B } from "x";
+```
+
+A mixed import declaration
+
+```ts
+import { A, type B } from "x";
+```
+
+becomes:
+
+```ts
+// TS 3.8+
+import type { B } from "x";
+import { A } from "x";
+
+// TS 3.7 or less
+import { A, B } from "x";
+```
+
+#### Semantics
+
+When an import declaration has only import names with `type` modifiers, it is
+emitted as a type-only import declaration for TS 3.8+ and as a value import
+declaration for TS 3.7 or less. The latter will be less strict (see
+[type-only import/export](#type-only-importexport-38)).
+
+When type and value imports are mixed, two import declarations are emitted for
+TS 3.8+, one for type-only imports and another one for value imports. For TS 3.7
+or less, one value import declaration is emitted which will be less strict (see
+[type-only import/export](#type-only-importexport-38)).
+
 ### `#private` (3.8)
 
 TypeScript 3.8 supports the new ECMAScript-standard #private properties in
