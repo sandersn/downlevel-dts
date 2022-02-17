@@ -101,7 +101,6 @@ function doTransform(checker, targetVersion, k) {
       );
     } else if (semver.lt(targetVersion, "3.6.0") && ts.isSetAccessor(n)) {
       // set x(value: number) => x: number
-      let flags = ts.getCombinedModifierFlags(n);
       if (getMatchingAccessor(n, "set")) {
         return undefined;
       } else {
