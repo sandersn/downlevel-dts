@@ -135,15 +135,17 @@ import { C } from "x";
 var c = new C();
 ```
 
-### `type` modifiers on import names (4.5)
+### `type` modifiers on import/export names (4.5)
 
 The downlevel emit depends on the TypeScript target version and whether type and
-value imports are mixed.
+value imports/exports are mixed.
 
-An import declaration with only import names that have `type` modifiers
+An import/export declaration with only import/export names that have `type`
+modifiers
 
 ```ts
 import { type A, type B } from "x";
+export { type A, type B };
 ```
 
 becomes:
@@ -151,15 +153,18 @@ becomes:
 ```ts
 // TS 3.8+
 import type { A, B } from "x";
+export type { A, B };
 
 // TS 3.7 or less
 import { A, B } from "x";
+export { A, B };
 ```
 
-A mixed import declaration
+A mixed import/export declaration
 
 ```ts
 import { A, type B } from "x";
+export { A, type B };
 ```
 
 becomes:
@@ -168,21 +173,25 @@ becomes:
 // TS 3.8+
 import type { B } from "x";
 import { A } from "x";
+export type { B };
+export { A };
 
 // TS 3.7 or less
 import { A, B } from "x";
+export { A, B };
 ```
 
 #### Semantics
 
-When an import declaration has only import names with `type` modifiers, it is
-emitted as a type-only import declaration for TS 3.8+ and as a value import
-declaration for TS 3.7 or less. The latter will be less strict (see
-[type-only import/export](#type-only-importexport-38)).
+When an import/export declaration has only import/export names with `type`
+modifiers, it is emitted as a type-only import/export declaration for TS 3.8+
+and as a value import/export declaration for TS 3.7 or less. The latter will be
+less strict (see [type-only import/export](#type-only-importexport-38)).
 
-When type and value imports are mixed, two import declarations are emitted for
-TS 3.8+, one for type-only imports and another one for value imports. For TS 3.7
-or less, one value import declaration is emitted which will be less strict (see
+When type and value imports/exports are mixed, two import/export declarations
+are emitted for TS 3.8+, one for type-only imports/exports and another one for
+value imports/exports. For TS 3.7 or less, one value import/export declaration
+is emitted which will be less strict (see
 [type-only import/export](#type-only-importexport-38)).
 
 ### `#private` (3.8)

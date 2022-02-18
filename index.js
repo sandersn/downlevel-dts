@@ -253,6 +253,85 @@ function doTransform(checker, targetVersion, k) {
           )
         ];
       }
+    } else if (
+      semver.lt(targetVersion, "4.5.0") &&
+      ts.isExportDeclaration(n) &&
+      !n.modifiers &&
+      !n.isTypeOnly &&
+      n.exportClause &&
+      ts.isNamedExports(n.exportClause) &&
+      n.exportClause.elements.some(e => e.isTypeOnly)
+    ) {
+      const elements = n.exportClause.elements;
+
+      if (semver.lt(targetVersion, "3.8.0")) {
+        // export { A, type B }
+        // export { C, type D } from 'x'
+        // =>
+        // export { A, B }
+        // export { C, D } from 'x'
+        return copyComment(
+          [n],
+          ts.createExportDeclaration(
+            n.decorators,
+            n.modifiers,
+            ts.createNamedExports(elements.map(e => ts.createExportSpecifier(false, e.propertyName, e.name))),
+            n.moduleSpecifier
+          )
+        );
+      }
+
+      const typeElements = [];
+      const valueElements = [];
+      for (const e of elements) {
+        if (e.isTypeOnly) {
+          typeElements.push(e);
+        } else {
+          valueElements.push(e);
+        }
+      }
+
+      // export { type A, type B, ... }
+      // export { type C, type D, ... } from 'x'
+      // =>
+      // export type { A, B }
+      // export type { C, D } from 'x'
+      const typeOnlyExportDeclaration = copyComment(
+        [n],
+        ts.createExportDeclaration(
+          n.decorators,
+          n.modifiers,
+          ts.createNamedExports(typeElements.map(e => ts.createExportSpecifier(false, e.propertyName, e.name))),
+          n.moduleSpecifier,
+          true
+        )
+      );
+
+      if (valueElements.length === 0) {
+        // export { type A, type B }
+        // export { type C, type D } from 'x'
+        // =>
+        // export type { A, B }
+        // export type { C, D } from 'x'
+        return typeOnlyExportDeclaration;
+      } else {
+        // export { A, type B }
+        // export { C, type D } from 'x'
+        // =>
+        // export type { B }
+        // export { A }
+        // export type { C } from 'x'
+        // export { D } from 'x'
+        return [
+          typeOnlyExportDeclaration,
+          ts.createExportDeclaration(
+            n.decorators,
+            n.modifiers,
+            ts.createNamedExports(valueElements.map(e => ts.createExportSpecifier(false, e.propertyName, e.name))),
+            n.moduleSpecifier
+          )
+        ];
+      }
     } else if (isTypeReference(n, "Omit")) {
       const symbol = checker.getSymbolAtLocation(ts.isTypeReferenceNode(n) ? n.typeName : n.expression);
       const typeArguments = n.typeArguments;

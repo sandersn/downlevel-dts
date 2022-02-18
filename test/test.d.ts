@@ -28,6 +28,14 @@ import type { C as CD } from "./src/test";
 import { type C as CD2, type C as CD3 } from "./src/test";
 /** this too */
 import { C as CD4, type C as CD5 } from "./src/test";
+/** preserve it */
+export { type CD2, type CD3 };
+/** this too */
+export { CD4, type CD5 };
+/** preserve it */
+export { type C as CD6, type C as CD7 } from "./src/test";
+/** this too */
+export { C as CD8, type C as CD9 } from "./src/test";
 
 // another comment
 export * as rex from "./src/test";
