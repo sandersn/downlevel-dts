@@ -180,6 +180,7 @@ function doTransform(checker, targetVersion, k) {
       n.importClause &&
       !n.importClause.isTypeOnly &&
       n.importClause.namedBindings &&
+      ts.isNamedImports(n.importClause.namedBindings) &&
       n.importClause.namedBindings.elements.some(e => e.isTypeOnly)
     ) {
       const elements = n.importClause.namedBindings.elements;
@@ -245,7 +246,7 @@ function doTransform(checker, targetVersion, k) {
             n.decorators,
             n.modifiers,
             ts.createImportClause(
-              n.name,
+              n.importClause.name,
               ts.createNamedImports(valueElements.map(e => ts.createImportSpecifier(false, e.propertyName, e.name)))
             ),
             n.moduleSpecifier
