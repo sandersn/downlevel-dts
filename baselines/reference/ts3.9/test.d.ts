@@ -23,6 +23,21 @@ export namespace N {
 }
 /** is this a single-line comment? */
 import type { C as CD } from "./src/test";
+/*preserve it */
+import type { C as CD2, C as CD3 } from "./src/test";
+/*this too */
+import type { C as CD5 } from "./src/test";
+import { C as CD4 } from "./src/test";
+/*preserve it */
+export type { CD2, CD3 };
+/*this too */
+export type { CD5 };
+export { CD4 };
+/*preserve it */
+export type { C as CD6, C as CD7 } from "./src/test";
+/*this too */
+export type { C as CD9 } from "./src/test";
+export { C as CD8 } from "./src/test";
 // another comment
 export * as rex from "./src/test";
 export interface E {

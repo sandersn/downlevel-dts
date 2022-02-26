@@ -165,7 +165,7 @@ function doTransform(checker, targetVersion, k) {
           ts.createExportDeclaration(
             undefined,
             undefined,
-            ts.createNamedExports([ts.createExportSpecifier(tempName, n.exportClause.name)])
+            ts.createNamedExports([ts.createExportSpecifier(false, tempName, n.exportClause.name)])
           )
         )
       ];
@@ -173,6 +173,165 @@ function doTransform(checker, targetVersion, k) {
       return ts.createExportDeclaration(n.decorators, n.modifiers, n.exportClause, n.moduleSpecifier);
     } else if (semver.lt(targetVersion, "3.8.0") && ts.isImportClause(n) && n.isTypeOnly) {
       return ts.createImportClause(n.name, n.namedBindings);
+    } else if (
+      semver.lt(targetVersion, "4.5.0") &&
+      ts.isImportDeclaration(n) &&
+      !n.modifiers &&
+      n.importClause &&
+      !n.importClause.isTypeOnly &&
+      n.importClause.namedBindings &&
+      ts.isNamedImports(n.importClause.namedBindings) &&
+      n.importClause.namedBindings.elements.some(e => e.isTypeOnly)
+    ) {
+      const elements = n.importClause.namedBindings.elements;
+
+      if (semver.lt(targetVersion, "3.8.0")) {
+        // import { A, type B } from 'x'
+        // =>
+        // import { A, B } from 'x'
+        return copyComment(
+          [n],
+          ts.createImportDeclaration(
+            n.decorators,
+            n.modifiers,
+            ts.createImportClause(
+              n.importClause.name,
+              ts.createNamedImports(elements.map(e => ts.createImportSpecifier(false, e.propertyName, e.name)))
+            ),
+            n.moduleSpecifier
+          )
+        );
+      }
+
+      const typeElements = [];
+      const valueElements = [];
+      for (const e of elements) {
+        if (e.isTypeOnly) {
+          typeElements.push(e);
+        } else {
+          valueElements.push(e);
+        }
+      }
+
+      // import { type A, type B, ... } from 'x'
+      // =>
+      // import type { A, B } from 'x'
+      const typeOnlyImportDeclaration = copyComment(
+        [n],
+        ts.createImportDeclaration(
+          n.decorators,
+          n.modifiers,
+          ts.createImportClause(
+            n.importClause.name,
+            ts.createNamedImports(typeElements.map(e => ts.createImportSpecifier(false, e.propertyName, e.name))),
+            true
+          ),
+          n.moduleSpecifier
+        )
+      );
+
+      if (valueElements.length === 0) {
+        // import { type A, type B } from 'x'
+        // =>
+        // import type { A, B } from 'x'
+        return typeOnlyImportDeclaration;
+      } else {
+        // import { A, type B } from 'x'
+        // =>
+        // import type { B } from 'x'
+        // import { A } from 'x'
+        return [
+          typeOnlyImportDeclaration,
+          ts.createImportDeclaration(
+            n.decorators,
+            n.modifiers,
+            ts.createImportClause(
+              n.importClause.name,
+              ts.createNamedImports(valueElements.map(e => ts.createImportSpecifier(false, e.propertyName, e.name)))
+            ),
+            n.moduleSpecifier
+          )
+        ];
+      }
+    } else if (
+      semver.lt(targetVersion, "4.5.0") &&
+      ts.isExportDeclaration(n) &&
+      !n.modifiers &&
+      !n.isTypeOnly &&
+      n.exportClause &&
+      ts.isNamedExports(n.exportClause) &&
+      n.exportClause.elements.some(e => e.isTypeOnly)
+    ) {
+      const elements = n.exportClause.elements;
+
+      if (semver.lt(targetVersion, "3.8.0")) {
+        // export { A, type B }
+        // export { C, type D } from 'x'
+        // =>
+        // export { A, B }
+        // export { C, D } from 'x'
+        return copyComment(
+          [n],
+          ts.createExportDeclaration(
+            n.decorators,
+            n.modifiers,
+            ts.createNamedExports(elements.map(e => ts.createExportSpecifier(false, e.propertyName, e.name))),
+            n.moduleSpecifier
+          )
+        );
+      }
+
+      const typeElements = [];
+      const valueElements = [];
+      for (const e of elements) {
+        if (e.isTypeOnly) {
+          typeElements.push(e);
+        } else {
+          valueElements.push(e);
+        }
+      }
+
+      // export { type A, type B, ... }
+      // export { type C, type D, ... } from 'x'
+      // =>
+      // export type { A, B }
+      // export type { C, D } from 'x'
+      const typeOnlyExportDeclaration = copyComment(
+        [n],
+        ts.createExportDeclaration(
+          n.decorators,
+          n.modifiers,
+          ts.createNamedExports(typeElements.map(e => ts.createExportSpecifier(false, e.propertyName, e.name))),
+          n.moduleSpecifier,
+          true
+        )
+      );
+
+      if (valueElements.length === 0) {
+        // export { type A, type B }
+        // export { type C, type D } from 'x'
+        // =>
+        // export type { A, B }
+        // export type { C, D } from 'x'
+        return typeOnlyExportDeclaration;
+      } else {
+        // export { A, type B }
+        // export { C, type D } from 'x'
+        // =>
+        // export type { B }
+        // export { A }
+        // export type { C } from 'x'
+        // export { D } from 'x'
+        return [
+          typeOnlyExportDeclaration,
+          ts.createExportDeclaration(
+            n.decorators,
+            n.modifiers,
+            ts.createNamedExports(valueElements.map(e => ts.createExportSpecifier(false, e.propertyName, e.name))),
+            n.moduleSpecifier
+          )
+        ];
+      }
     } else if (isTypeReference(n, "Omit")) {
       const symbol = checker.getSymbolAtLocation(ts.isTypeReferenceNode(n) ? n.typeName : n.expression);
       const typeArguments = n.typeArguments;
@@ -280,7 +439,7 @@ function flatMap(l, f) {
  * Checks whether a node is a type reference with typeName as a name
  * @param {ts.Node} node AST node
  * @param {string} typeName name of the type
- * @returns true if the node is a type reference with typeName as a name
+ * @returns {node is ts.TypeReferenceNode | ts.ExpressionWithTypeArguments} true if the node is a type reference with typeName as a name
  */
 function isTypeReference(node, typeName) {
   return (
@@ -299,6 +458,7 @@ function isTypeReference(node, typeName) {
 function isStdLibSymbol(symbol) {
   return (
     symbol &&
+    symbol.declarations &&
     symbol.declarations.length &&
     symbol.declarations[0].getSourceFile().fileName.includes("node_modules/typescript/lib/lib")
   );
