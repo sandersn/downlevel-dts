@@ -63,18 +63,22 @@ function doTransform(checker, targetVersion, k) {
   const transform = function(n) {
     if (semver.lt(targetVersion, "3.7.0")) {
       if (ts.isFunctionTypeNode(n) && n.type && ts.isTypePredicateNode(n.type) && n.type.assertsModifier) {
-        return ts.createFunctionTypeNode(n.typeParameters, n.parameters, ts.createTypeReferenceNode("void", undefined));
+        return ts.factory.createFunctionTypeNode(
+          n.typeParameters,
+          n.parameters,
+          ts.factory.createTypeReferenceNode("void", undefined)
+        );
       }
 
       if (ts.isFunctionDeclaration(n) && n.type && ts.isTypePredicateNode(n.type) && n.type.assertsModifier) {
-        return ts.createFunctionDeclaration(
+        return ts.factory.createFunctionDeclaration(
           n.decorators,
           n.modifiers,
           n.asteriskToken,
           n.name,
           n.typeParameters,
           n.parameters,
-          ts.createTypeReferenceNode("void", undefined),
+          ts.factory.createTypeReferenceNode("void", undefined),
           n.body
         );
       }
@@ -87,10 +91,10 @@ function doTransform(checker, targetVersion, k) {
       if (!other) {
         flags |= ts.ModifierFlags.Readonly;
       }
-      const modifiers = ts.createModifiersFromModifierFlags(flags);
+      const modifiers = ts.factory.createModifiersFromModifierFlags(flags);
       return copyComment(
         other ? [n, other] : [n],
-        ts.createProperty(
+        ts.factory.createPropertyDeclaration(
           n.decorators,
           modifiers,
           n.name,
@@ -107,7 +111,7 @@ function doTransform(checker, targetVersion, k) {
         assert(n.parameters && n.parameters.length);
         return copyComment(
           [n],
-          ts.createProperty(
+          ts.factory.createPropertyDeclaration(
             n.decorators,
             n.modifiers,
             n.name,
@@ -121,7 +125,7 @@ function doTransform(checker, targetVersion, k) {
       const symbol = checker.getSymbolAtLocation(ts.isTypeReferenceNode(n) ? n.typeName : n.expression);
       const typeArguments = n.typeArguments;
       if (isStdLibSymbol(symbol) && typeArguments) {
-        return ts.createTypeReferenceNode(ts.createIdentifier("IteratorResult"), [typeArguments[0]]);
+        return ts.factory.createTypeReferenceNode(ts.factory.createIdentifier("IteratorResult"), [typeArguments[0]]);
       }
     } else if (
       semver.lt(targetVersion, "3.8.0") &&
@@ -130,12 +134,12 @@ function doTransform(checker, targetVersion, k) {
       n.name.escapedText === "#private"
     ) {
       // #private => private "#private"
-      const modifiers = ts.createModifiersFromModifierFlags(ts.ModifierFlags.Private);
+      const modifiers = ts.factory.createModifiersFromModifierFlags(ts.ModifierFlags.Private);
       const parentName = n.parent.name ? n.parent.name.escapedText : "(anonymous)";
-      return ts.createProperty(
+      return ts.factory.createPropertyDeclaration(
         n.decorators,
         modifiers,
-        ts.createStringLiteral(parentName + ".#private"),
+        ts.factory.createStringLiteral(parentName + ".#private"),
         /*?! token*/ undefined,
         /*type*/ undefined,
         /*initialiser*/ undefined
@@ -151,27 +155,28 @@ function doTransform(checker, targetVersion, k) {
       //  =>
       // import * as ns_1 from 'x'
       // export { ns_1 as ns }
-      const tempName = ts.createUniqueName(n.exportClause.name.getText());
+      const tempName = ts.factory.createUniqueName(n.exportClause.name.getText());
       return [
-        ts.createImportDeclaration(
+        ts.factory.createImportDeclaration(
           n.decorators,
           n.modifiers,
-          ts.createImportClause(/*name*/ undefined, ts.createNamespaceImport(tempName)),
+          ts.factory.createImportClause(false, /*name*/ undefined, ts.factory.createNamespaceImport(tempName)),
           n.moduleSpecifier
         ),
         copyComment(
           [n],
-          ts.createExportDeclaration(
+          ts.factory.createExportDeclaration(
             undefined,
             undefined,
-            ts.createNamedExports([ts.createExportSpecifier(false, tempName, n.exportClause.name)])
+            false,
+            ts.factory.createNamedExports([ts.factory.createExportSpecifier(false, tempName, n.exportClause.name)])
           )
         )
       ];
     } else if (semver.lt(targetVersion, "3.8.0") && ts.isExportDeclaration(n) && n.isTypeOnly) {
-      return ts.createExportDeclaration(n.decorators, n.modifiers, n.exportClause, n.moduleSpecifier);
+      return ts.factory.createExportDeclaration(n.decorators, n.modifiers, false, n.exportClause, n.moduleSpecifier);
     } else if (semver.lt(targetVersion, "3.8.0") && ts.isImportClause(n) && n.isTypeOnly) {
-      return ts.createImportClause(n.name, n.namedBindings);
+      return ts.factory.createImportClause(false, n.name, n.namedBindings);
     } else if (
       semver.lt(targetVersion, "4.5.0") &&
       ts.isImportDeclaration(n) &&
@@ -190,12 +195,15 @@ function doTransform(checker, targetVersion, k) {
         // import { A, B } from 'x'
         return copyComment(
           [n],
-          ts.createImportDeclaration(
+          ts.factory.createImportDeclaration(
             n.decorators,
             n.modifiers,
-            ts.createImportClause(
+            ts.factory.createImportClause(
+              false,
               n.importClause.name,
-              ts.createNamedImports(elements.map(e => ts.createImportSpecifier(false, e.propertyName, e.name)))
+              ts.factory.createNamedImports(
+                elements.map(e => ts.factory.createImportSpecifier(false, e.propertyName, e.name))
+              )
             ),
             n.moduleSpecifier
           )
@@ -217,13 +225,15 @@ function doTransform(checker, targetVersion, k) {
       // import type { A, B } from 'x'
       const typeOnlyImportDeclaration = copyComment(
         [n],
-        ts.createImportDeclaration(
+        ts.factory.createImportDeclaration(
           n.decorators,
           n.modifiers,
-          ts.createImportClause(
+          ts.factory.createImportClause(
+            true,
             n.importClause.name,
-            ts.createNamedImports(typeElements.map(e => ts.createImportSpecifier(false, e.propertyName, e.name))),
-            true
+            ts.createNamedImports(
+              typeElements.map(e => ts.factory.createImportSpecifier(false, e.propertyName, e.name))
+            )
           ),
           n.moduleSpecifier
         )
@@ -241,12 +251,15 @@ function doTransform(checker, targetVersion, k) {
         // import { A } from 'x'
         return [
           typeOnlyImportDeclaration,
-          ts.createImportDeclaration(
+          ts.factory.createImportDeclaration(
             n.decorators,
             n.modifiers,
-            ts.createImportClause(
+            ts.factory.createImportClause(
+              false,
               n.importClause.name,
-              ts.createNamedImports(valueElements.map(e => ts.createImportSpecifier(false, e.propertyName, e.name)))
+              ts.factory.createNamedImports(
+                valueElements.map(e => ts.factory.createImportSpecifier(false, e.propertyName, e.name))
+              )
             ),
             n.moduleSpecifier
           )
@@ -271,10 +284,13 @@ function doTransform(checker, targetVersion, k) {
         // export { C, D } from 'x'
         return copyComment(
           [n],
-          ts.createExportDeclaration(
+          ts.factory.createExportDeclaration(
             n.decorators,
             n.modifiers,
-            ts.createNamedExports(elements.map(e => ts.createExportSpecifier(false, e.propertyName, e.name))),
+            false,
+            ts.factory.createNamedExports(
+              elements.map(e => ts.factory.createExportSpecifier(false, e.propertyName, e.name))
+            ),
             n.moduleSpecifier
           )
         );
@@ -297,12 +313,14 @@ function doTransform(checker, targetVersion, k) {
       // export type { C, D } from 'x'
       const typeOnlyExportDeclaration = copyComment(
         [n],
-        ts.createExportDeclaration(
+        ts.factory.createExportDeclaration(
           n.decorators,
           n.modifiers,
-          ts.createNamedExports(typeElements.map(e => ts.createExportSpecifier(false, e.propertyName, e.name))),
-          n.moduleSpecifier,
-          true
+          true,
+          ts.factory.createNamedExports(
+            typeElements.map(e => ts.factory.createExportSpecifier(false, e.propertyName, e.name))
+          ),
+          n.moduleSpecifier
         )
       );
 
@@ -323,10 +341,13 @@ function doTransform(checker, targetVersion, k) {
         // export { D } from 'x'
         return [
           typeOnlyExportDeclaration,
-          ts.createExportDeclaration(
+          ts.factory.createExportDeclaration(
             n.decorators,
             n.modifiers,
-            ts.createNamedExports(valueElements.map(e => ts.createExportSpecifier(false, e.propertyName, e.name))),
+            false,
+            ts.factory.createNamedExports(
+              valueElements.map(e => ts.factory.createExportSpecifier(false, e.propertyName, e.name))
+            ),
             n.moduleSpecifier
           )
         ];
@@ -336,10 +357,10 @@ function doTransform(checker, targetVersion, k) {
       const typeArguments = n.typeArguments;
 
       if (semver.lt(targetVersion, "3.5.0") && isStdLibSymbol(symbol) && typeArguments) {
-        return ts.createTypeReferenceNode(ts.createIdentifier("Pick"), [
+        return ts.factory.createTypeReferenceNode(ts.factory.createIdentifier("Pick"), [
           typeArguments[0],
-          ts.createTypeReferenceNode(ts.createIdentifier("Exclude"), [
-            ts.createTypeOperatorNode(typeArguments[0]),
+          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier("Exclude"), [
+            ts.factory.createTypeOperatorNode(ts.SyntaxKind.KeyOfKeyword, typeArguments[0]),
             typeArguments[1]
           ])
         ]);
@@ -347,7 +368,7 @@ function doTransform(checker, targetVersion, k) {
     } else if (semver.lt(targetVersion, "4.0.0") && n.kind === ts.SyntaxKind.NamedTupleMember) {
       const member = /** @type {import("typescript").NamedTupleMember} */ (n);
       return ts.addSyntheticLeadingComment(
-        member.dotDotDotToken ? ts.createRestTypeNode(member.type) : member.type,
+        member.dotDotDotToken ? ts.factory.createRestTypeNode(member.type) : member.type,
         ts.SyntaxKind.MultiLineCommentTrivia,
         ts.unescapeLeadingUnderscores(member.name.escapedText),
         /*hasTrailingNewline*/ false
@@ -359,7 +380,7 @@ function doTransform(checker, targetVersion, k) {
 }
 /** @param {import("typescript").TypeNode | undefined} t */
 function defaultAny(t) {
-  return t || ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword);
+  return t || ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword);
 }
 
 /**
