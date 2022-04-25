@@ -294,6 +294,30 @@ type T = [/** foo */ number, /** bar */ string];
 The downlevel semantics are exactly the same as the original, but
 the TypeScript language service won't be able to show the member names.
 
+### `in out T` (4.7)
+
+Typescript 4.7 supports variance annotations on type parameter declarations:
+
+```ts
+interface State<in out T> {
+    get: () => T;
+    set: (value: T) => void;
+}
+```
+
+becomes:
+
+```ts
+interface State<T> {
+  get: () => T;
+  set: (value: T) => void;
+}
+```
+
+#### Semantics
+
+The downlevel .d.ts omits the variance annotations, which will change the variance in the cases where they were added because the compiler gets it wrong.
+
 ## Target
 
 Since the earliest downlevel feature is from TypeScript 3.5,
