@@ -18,14 +18,14 @@
   "dependencies": {
     "semver": "^7.3.2",
     "shelljs": "^0.8.3",
-    "typescript": "4.7.0-beta"
+    "typescript": "^4.7.0-dev.20220425"
   },
   "devDependencies": {
     "@types/node": "^13.1.6",
-    "@types/shelljs": "^0.8.6",
     "@types/semver": "^7.3.4",
+    "@types/shelljs": "^0.8.6",
     "husky": "^4.0.0",
-    "jest": "^24.9.0",
+    "jest": "^28.0.0",
     "prettier": "^1.19.1",
     "pretty-quick": "^2.0.1"
   },
