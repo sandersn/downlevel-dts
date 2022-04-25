@@ -375,9 +375,10 @@ function doTransform(checker, targetVersion, k) {
       );
     } else if (semver.lt(targetVersion, "4.7.0") && ts.isTypeParameterDeclaration(n)) {
       return ts.factory.createTypeParameterDeclaration(
-        n.modifiers?.filter(
-          modifier => modifier.kind !== ts.SyntaxKind.InKeyword && modifier.kind !== ts.SyntaxKind.OutKeyword
-        ),
+        n.modifier &&
+          n.modifiers.filter(
+            modifier => modifier.kind !== ts.SyntaxKind.InKeyword && modifier.kind !== ts.SyntaxKind.OutKeyword
+          ),
         n.name,
         n.constraint,
         n.default
