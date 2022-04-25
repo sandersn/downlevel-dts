@@ -19,3 +19,9 @@ export interface E {
     b: number;
 }
 export type F = Omit<E, 'a'>;
+export type Getter<T> = () => T;
+export type Setter<T> = (value: T) => void;
+export interface State<T> {
+    get: () => T;
+    set: (value: T) => void;
+}

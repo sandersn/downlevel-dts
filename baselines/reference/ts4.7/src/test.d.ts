@@ -12,16 +12,16 @@ export namespace N {
         set r(value: boolean);
     }
 }
-export { C as DetectiveComics };
+export type { C as DetectiveComics };
 export type Omit<T, K extends keyof any> = Pick<T, Exclude<keyof T, K>>;
 export interface E {
     a: number;
     b: number;
 }
 export type F = Omit<E, 'a'>;
-export type Getter<T> = () => T;
-export type Setter<T> = (value: T) => void;
-export interface State<T> {
+export type Getter<out T> = () => T;
+export type Setter<in T> = (value: T) => void;
+export interface State<in out T> {
     get: () => T;
     set: (value: T) => void;
 }

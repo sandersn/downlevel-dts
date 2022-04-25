@@ -23,3 +23,10 @@ export interface E {
 }
 
 export type F = Omit<E, 'a'>;
+
+export type Getter<out T> = () => T;
+export type Setter<in T> = (value: T) => void;
+export interface State<in out T> {
+    get: () => T;
+    set: (value: T) => void;
+}

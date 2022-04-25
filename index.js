@@ -373,6 +373,16 @@ function doTransform(checker, targetVersion, k) {
         ts.unescapeLeadingUnderscores(member.name.escapedText),
         /*hasTrailingNewline*/ false
       );
+    } else if (semver.lt(targetVersion, "4.7.0") && ts.isTypeParameterDeclaration(n)) {
+      return ts.factory.createTypeParameterDeclaration(
+        n.modifiers &&
+          n.modifiers.filter(
+            modifier => modifier.kind !== ts.SyntaxKind.InKeyword && modifier.kind !== ts.SyntaxKind.OutKeyword
+          ),
+        n.name,
+        n.constraint,
+        n.default
+      );
     }
     return ts.visitEachChild(n, transform, k);
   };
