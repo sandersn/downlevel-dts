@@ -365,6 +365,94 @@ function doTransform(checker, targetVersion, k) {
           ])
         ]);
       }
+    } else if (isTypeReference(n, "Awaited") && ts.isTypeAliasDeclaration(n.parent)) {
+      const symbol = checker.getSymbolAtLocation(ts.isTypeReferenceNode(n) ? n.typeName : n.expression);
+      const typeArguments = n.typeArguments;
+
+      if (semver.lt(targetVersion, "4.5.0") && isStdLibSymbol(symbol) && typeArguments) {
+        return ts.factory.createConditionalTypeNode(
+          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier("T"), undefined),
+          ts.factory.createUnionTypeNode([
+            ts.factory.createLiteralTypeNode(ts.factory.createNull()),
+            ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)
+          ]),
+          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier("T"), undefined),
+          ts.factory.createConditionalTypeNode(
+            ts.factory.createTypeReferenceNode(ts.factory.createIdentifier("T"), undefined),
+            ts.factory.createIntersectionTypeNode([
+              ts.factory.createKeywordTypeNode(ts.SyntaxKind.ObjectKeyword),
+              ts.factory.createTypeLiteralNode([
+                ts.factory.createMethodSignature(
+                  undefined,
+                  ts.factory.createIdentifier("then"),
+                  undefined,
+                  undefined,
+                  [
+                    ts.factory.createParameterDeclaration(
+                      undefined,
+                      undefined,
+                      undefined,
+                      ts.factory.createIdentifier("onfulfilled"),
+                      undefined,
+                      ts.factory.createInferTypeNode(
+                        ts.factory.createTypeParameterDeclaration(
+                          undefined,
+                          ts.factory.createIdentifier("F"),
+                          undefined,
+                          undefined
+                        )
+                      ),
+                      undefined
+                    )
+                  ],
+                  ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
+                )
+              ])
+            ]),
+            ts.factory.createConditionalTypeNode(
+              ts.factory.createTypeReferenceNode(ts.factory.createIdentifier("F"), undefined),
+              ts.factory.createParenthesizedType(
+                ts.factory.createFunctionTypeNode(
+                  undefined,
+                  [
+                    ts.factory.createParameterDeclaration(
+                      undefined,
+                      undefined,
+                      undefined,
+                      ts.factory.createIdentifier("value"),
+                      undefined,
+                      ts.factory.createInferTypeNode(
+                        ts.factory.createTypeParameterDeclaration(
+                          undefined,
+                          ts.factory.createIdentifier("V"),
+                          undefined,
+                          undefined
+                        )
+                      ),
+                      undefined
+                    ),
+                    ts.factory.createParameterDeclaration(
+                      undefined,
+                      undefined,
+                      ts.factory.createToken(ts.SyntaxKind.DotDotDotToken),
+                      ts.factory.createIdentifier("args"),
+                      undefined,
+                      ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
+                      undefined
+                    )
+                  ],
+                  ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
+                )
+              ),
+              ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(n.parent.name.escapedText.toString()), [
+                ts.factory.createTypeReferenceNode(ts.factory.createIdentifier("V"), undefined)
+              ]),
+              ts.factory.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword)
+            ),
+            ts.factory.createTypeReferenceNode(ts.factory.createIdentifier("T"), undefined)
+          )
+        );
+      }
     } else if (semver.lt(targetVersion, "4.0.0") && n.kind === ts.SyntaxKind.NamedTupleMember) {
       const member = /** @type {import("typescript").NamedTupleMember} */ (n);
       return ts.addSyntheticLeadingComment(

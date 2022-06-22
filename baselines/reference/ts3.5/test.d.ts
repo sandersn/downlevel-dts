@@ -69,3 +69,6 @@ export declare const foo: {
     };
 };
 export type IR = IteratorResult<number>;
+export type K<T> = T extends null | undefined ? T : T extends object & {
+    then(onfulfilled: infer F): any;
+} ? F extends ((value: infer V, ...args: any) => any) ? K<V> : never : T;

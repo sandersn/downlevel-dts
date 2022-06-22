@@ -75,3 +75,5 @@ export declare const foo: {
 };
 
 export type IR = IteratorResult<number, string>;
+
+export type K<T> = Awaited<Promise<T>>;
