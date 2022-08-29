@@ -72,7 +72,6 @@ function doTransform(checker, targetVersion, k) {
 
       if (ts.isFunctionDeclaration(n) && n.type && ts.isTypePredicateNode(n.type) && n.type.assertsModifier) {
         return ts.factory.createFunctionDeclaration(
-          n.decorators,
           n.modifiers,
           n.asteriskToken,
           n.name,
@@ -95,7 +94,6 @@ function doTransform(checker, targetVersion, k) {
       return copyComment(
         other ? [n, other] : [n],
         ts.factory.createPropertyDeclaration(
-          n.decorators,
           modifiers,
           n.name,
           /*?! token*/ undefined,
@@ -112,7 +110,6 @@ function doTransform(checker, targetVersion, k) {
         return copyComment(
           [n],
           ts.factory.createPropertyDeclaration(
-            n.decorators,
             n.modifiers,
             n.name,
             /*?! token*/ undefined,
@@ -137,7 +134,6 @@ function doTransform(checker, targetVersion, k) {
       const modifiers = ts.factory.createModifiersFromModifierFlags(ts.ModifierFlags.Private);
       const parentName = n.parent.name ? n.parent.name.escapedText : "(anonymous)";
       return ts.factory.createPropertyDeclaration(
-        n.decorators,
         modifiers,
         ts.factory.createStringLiteral(parentName + ".#private"),
         /*?! token*/ undefined,
@@ -158,7 +154,6 @@ function doTransform(checker, targetVersion, k) {
       const tempName = ts.factory.createUniqueName(n.exportClause.name.getText());
       return [
         ts.factory.createImportDeclaration(
-          n.decorators,
           n.modifiers,
           ts.factory.createImportClause(false, /*name*/ undefined, ts.factory.createNamespaceImport(tempName)),
           n.moduleSpecifier
@@ -167,14 +162,13 @@ function doTransform(checker, targetVersion, k) {
           [n],
           ts.factory.createExportDeclaration(
             undefined,
-            undefined,
             false,
             ts.factory.createNamedExports([ts.factory.createExportSpecifier(false, tempName, n.exportClause.name)])
           )
         )
       ];
     } else if (semver.lt(targetVersion, "3.8.0") && ts.isExportDeclaration(n) && n.isTypeOnly) {
-      return ts.factory.createExportDeclaration(n.decorators, n.modifiers, false, n.exportClause, n.moduleSpecifier);
+      return ts.factory.createExportDeclaration(n.modifiers, false, n.exportClause, n.moduleSpecifier);
     } else if (semver.lt(targetVersion, "3.8.0") && ts.isImportClause(n) && n.isTypeOnly) {
       return ts.factory.createImportClause(false, n.name, n.namedBindings);
     } else if (
@@ -196,7 +190,6 @@ function doTransform(checker, targetVersion, k) {
         return copyComment(
           [n],
           ts.factory.createImportDeclaration(
-            n.decorators,
             n.modifiers,
             ts.factory.createImportClause(
               false,
@@ -226,12 +219,11 @@ function doTransform(checker, targetVersion, k) {
       const typeOnlyImportDeclaration = copyComment(
         [n],
         ts.factory.createImportDeclaration(
-          n.decorators,
           n.modifiers,
           ts.factory.createImportClause(
             true,
             n.importClause.name,
-            ts.createNamedImports(
+            ts.factory.createNamedImports(
               typeElements.map(e => ts.factory.createImportSpecifier(false, e.propertyName, e.name))
             )
           ),
@@ -252,7 +244,6 @@ function doTransform(checker, targetVersion, k) {
         return [
           typeOnlyImportDeclaration,
           ts.factory.createImportDeclaration(
-            n.decorators,
             n.modifiers,
             ts.factory.createImportClause(
               false,
@@ -285,7 +276,6 @@ function doTransform(checker, targetVersion, k) {
         return copyComment(
           [n],
           ts.factory.createExportDeclaration(
-            n.decorators,
             n.modifiers,
             false,
             ts.factory.createNamedExports(
@@ -314,7 +304,6 @@ function doTransform(checker, targetVersion, k) {
       const typeOnlyExportDeclaration = copyComment(
         [n],
         ts.factory.createExportDeclaration(
-          n.decorators,
           n.modifiers,
           true,
           ts.factory.createNamedExports(
@@ -342,7 +331,6 @@ function doTransform(checker, targetVersion, k) {
         return [
           typeOnlyExportDeclaration,
           ts.factory.createExportDeclaration(
-            n.decorators,
             n.modifiers,
             false,
             ts.factory.createNamedExports(
