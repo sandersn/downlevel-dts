@@ -83,6 +83,12 @@ function doTransform(checker, targetVersion, k) {
       }
     }
 
+    if (semver.lt(targetVersion, "4.1.0") && n.kind === ts.SyntaxKind.TemplateLiteralType) {
+      // TemplateLiteralType added in 4.2
+      // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-1.html#template-literal-types
+      return ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
+    }
+
     if (semver.lt(targetVersion, "3.6.0") && ts.isGetAccessor(n)) {
       // get x(): number => x: number
       let flags = ts.getCombinedModifierFlags(n);
