@@ -329,10 +329,17 @@ downlevelled, nor are there any other plans to support TypeScript 2.x.
 
 ### Downlevel semantics
 
+## Source map
+
+Source map generation can be enabled by `--source-map` flag. Currently,
+it will provide mappings only from source definition to downlevelled. In
+case you need have full mapping from source file to downlevelled definition
+you can use [`merge-source-maps`](https://www.npmjs.com/package/merge-source-maps) library.
+
 ## Usage
 
 1. `$ npm install downlevel-dts`
-2. `$ npx downlevel-dts . ts3.4 [--to=3.4]`
+2. `$ npx downlevel-dts . ts3.4 [--to=3.4] [--source-map]`
 3. To your package.json, add
 
 ```json

@@ -7,33 +7,65 @@ const assert = require("assert");
 const semver = require("semver");
 
 /** @typedef {import("typescript").Node} Node */
+
+/**
+ * @typedef {Object} Options
+ * @property {import("semver").SemVer} targetVersion
+ * @property {boolean} sourceMap
+ */
 /**
  * @param {string} src
  * @param {string} target
- * @param {import("semver").SemVer} targetVersion
+ * @param {Options} options
  */
-function main(src, target, targetVersion) {
+function main(src, target, options) {
   if (!src || !target) {
     console.log("Usage: node index.js test test/ts3.4 [--to=3.4]");
     process.exit(1);
   }
 
+  const host = ts.createCompilerHost({});
+
   // TODO: target path is probably wrong for absolute src (or target?)
   // TODO: Probably will want to alter package.json if discovered in the right place.
   const program = ts.createProgram(
     sh.find(path.join(src)).filter(f => f.endsWith(".d.ts") && !/node_modules/.test(f)),
-    {}
+    {},
+    host
   );
   const checker = program.getTypeChecker(); // just used for setting parent pointers right now
   const files = mapDefined(program.getRootFileNames(), program.getSourceFile);
   const printer = ts.createPrinter({
     newLine: ts.NewLineKind.CarriageReturnLineFeed
   });
-  for (const t of ts.transform(files, [doTransform.bind(null, checker, targetVersion)]).transformed) {
+
+  const writer = ts.createTextWriter(host.getNewLine());
+
+  for (const t of ts.transform(files, [doTransform.bind(null, checker, options.targetVersion)]).transformed) {
     const f = /** @type {import("typescript").SourceFile} */ (t);
     const targetPath = path.join(target, path.resolve(f.fileName).slice(path.resolve(src).length));
+    const fileName = path.basename(path.resolve(f.fileName));
     sh.mkdir("-p", path.dirname(targetPath));
-    fs.writeFileSync(targetPath, dedupeTripleSlash(printer.printFile(f)));
+    let sourceMapGenerator;
+    if (options.sourceMap) {
+      sourceMapGenerator = ts.createSourceMapGenerator(
+        host,
+        fileName,
+        path.dirname(path.relative(targetPath, path.resolve(src))),
+        path.resolve(src),
+        {}
+      );
+    }
+
+    printer.writeFile(f, writer, sourceMapGenerator);
+
+    if (options.sourceMap) {
+      fs.writeFileSync(targetPath + ".map", sourceMapGenerator.toString());
+      fs.writeFileSync(targetPath, dedupeTripleSlash(addSourceMapUrl(fileName, writer.getText())));
+    } else {
+      fs.writeFileSync(targetPath, dedupeTripleSlash(writer.getText()));
+    }
+    writer.clear();
   }
 }
 module.exports.main = main;
@@ -41,13 +73,14 @@ module.exports.main = main;
 if (!(/** @type {*} */ (module.parent))) {
   const src = process.argv[2];
   const target = process.argv[3];
+  const sourceMap = process.argv.includes("--source-map");
   const to = process.argv.find(arg => arg.startsWith("--to"));
   /** @type {*} */ let targetVersion = semver.minVersion("3.4.0");
   if (to) {
     const userInput = semver.coerce(to.split("=")[1]);
     if (userInput) targetVersion = userInput;
   }
-  main(src, target, targetVersion);
+  main(src, target, { targetVersion, sourceMap });
 }
 
 /**
@@ -425,6 +458,22 @@ function dedupeTripleSlash(s) {
   const lines = s.split("\n");
   const i = lines.findIndex(line => !line.startsWith("/// <reference "));
   return [...new Set(lines.slice(0, i)), ...lines.slice(i)].join("\n");
+}
+
+/**
+ * @param {string} fileName
+ * @param {string} content
+ */
+function addSourceMapUrl(fileName, content) {
+  const lines = content.split("\n");
+  const lastLine = lines.pop();
+  const sourceMapUrl = "//# sourceMappingURL=" + fileName + ".map";
+  if (!lastLine || lastLine.includes("# sourceMappingURL=")) {
+    lines.push(sourceMapUrl);
+  } else {
+    lines.push(lastLine, sourceMapUrl);
+  }
+  return lines.join("\n");
 }
 
 /**
