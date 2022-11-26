@@ -318,6 +318,20 @@ interface State<T> {
 
 The downlevel .d.ts omits the variance annotations, which will change the variance in the cases where they were added because the compiler gets it wrong.
 
+### `typeof A<T>` (4.7)
+
+Typescript 4.7 supports type arguments for `typeof`:
+
+```ts
+type N = typeof func<number>;
+```
+
+becomes:
+
+```ts
+type N = any;
+```
+
 ## Target
 
 Since the earliest downlevel feature is from TypeScript 3.5,

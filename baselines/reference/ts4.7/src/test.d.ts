@@ -25,3 +25,5 @@ export interface State<in out T> {
     get: () => T;
     set: (value: T) => void;
 }
+declare function genericFunction<T>(): T;
+export type N = typeof genericFunction<number>;
