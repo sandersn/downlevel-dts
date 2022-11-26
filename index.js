@@ -367,6 +367,26 @@ function doTransform(checker, targetVersion, k) {
         ts.unescapeLeadingUnderscores(member.name.escapedText),
         /*hasTrailingNewline*/ false
       );
+    } else if (
+        semver.lt(targetVersion, "4.4.0") &&
+        ts.isIndexSignatureDeclaration(n) &&
+        ts.SyntaxKind.TemplateLiteralType === n.parameters[0].type.kind
+    ) {
+      const [p] = n.parameters;
+      return ts.factory.createIndexSignature(
+        n.modifiers,
+        [
+          ts.factory.createParameterDeclaration(
+            p.modifiers,
+            p.dotDotDotToken,
+            p.name,
+            p.questionToken,
+            ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
+            p.initializer
+          )
+        ],
+        n.type
+      );
     } else if (semver.lt(targetVersion, "4.7.0") && ts.isTypeParameterDeclaration(n)) {
       return ts.factory.createTypeParameterDeclaration(
         n.modifiers?.filter(

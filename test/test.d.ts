@@ -78,3 +78,5 @@ export type IR = IteratorResult<number, string>;
 
 /** Template Literal - supported since 4.1 < should be StringKeyword */
 export type TTemplateLiteral = `${string}abc${string}`;
+
+export type TTemplateLiteralIndexSignature = { [key: `${string}abc${string}`]: number }

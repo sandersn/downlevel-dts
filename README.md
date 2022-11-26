@@ -294,6 +294,25 @@ type T = [/** foo */ number, /** bar */ string];
 The downlevel semantics are exactly the same as the original, but
 the TypeScript language service won't be able to show the member names.
 
+### `{ [key: T]: A }` (4.4)
+
+Typescript 4.4 supports template literals as index signature types:
+
+```ts
+type O = { [key: `ak${string}`]: A };
+```
+
+becomes
+
+```ts
+type O = { [key: string]: A };
+```
+
+#### Semantics
+
+The downlevel d.ts will be less strict because an index signature would
+have a more general type (`string`) instead of the original template literal type.
+
 ### `in out T` (4.7)
 
 Typescript 4.7 supports variance annotations on type parameter declarations:
