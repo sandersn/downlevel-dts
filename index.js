@@ -376,6 +376,8 @@ function doTransform(checker, targetVersion, k) {
         n.constraint,
         n.default
       );
+    } else if (semver.lt(targetVersion, "4.7.0") && ts.isTypeQueryNode(n) && n.typeArguments?.length) {
+      return ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword);
     }
     return ts.visitEachChild(n, transform, k);
   };

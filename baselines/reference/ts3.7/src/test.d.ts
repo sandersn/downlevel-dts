@@ -25,3 +25,5 @@ export interface State<T> {
     get: () => T;
     set: (value: T) => void;
 }
+declare function genericFunction<T>(): T;
+export type N = any;
