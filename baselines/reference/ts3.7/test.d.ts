@@ -73,3 +73,6 @@ export declare const foo: {
 export type IR = IteratorResult<number, string>;
 /** Template Literal - supported since 4.1 < should be StringKeyword */
 export type TTemplateLiteral = string;
+export type TTemplateLiteralIndexSignature = {
+    [key: string]: number;
+};
