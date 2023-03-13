@@ -263,7 +263,7 @@ statements:
 ```ts
 export * as ns from 'x';
 ```
-
+AMAZING
 becomes
 
 ```ts
