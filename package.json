@@ -18,7 +18,7 @@
   "dependencies": {
     "semver": "^7.3.2",
     "shelljs": "^0.8.3",
-    "typescript": "next"
+    "typescript": "^5.0.0 || ^6.0.0"
   },
   "devDependencies": {
     "@types/node": "^13.1.6",
